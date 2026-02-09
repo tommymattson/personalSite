@@ -8,11 +8,11 @@ class MyHeader extends HTMLElement {
 
         this.innerHTML = `
         <nav>
-            <a href="${prefix}index.html" class="logo">Thomas Mattson</a>
+            <a href="/" class="logo">Thomas Mattson</a>
             <div class="nav-links">
-                <a href="${prefix}index.html" id="link-home">Home</a>\
-                <a href="${prefix}blog.html" id="link-blog">Blog</a>
-                <a href="${prefix}resume.html" id="link-resume">Resume</a>
+                <a href="/" id="link-home">Home</a>
+                <a href="/blog/" id="link-blog">Blog</a>
+                <a href="/resume/" id="link-resume">Resume</a>
             </div>
         </nav>
         `;
