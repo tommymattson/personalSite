@@ -10,7 +10,7 @@ class MyHeader extends HTMLElement {
         <nav>
             <a href="/" class="logo">Thomas Mattson</a>
             <div class="nav-links">
-                <a href="/" id="link-home">Work</a>
+                <a href="/" id="link-home">Home</a>
                 <a href="/blog/" id="link-blog">Blog</a>
                 <a href="/resume/" id="link-resume">Resume</a>
             </div>
