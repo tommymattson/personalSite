@@ -11,7 +11,7 @@ class MyHeader extends HTMLElement {
             <a href="${prefix}index.html" class="logo">Thomas Mattson</a>
             <div class="nav-links">
                 <a href="${prefix}index.html" id="link-home">Work</a>\
-                <a href="${prefix}blog.html" id="link-blog" style="color: var(--accent);">Blog</a>
+                <a href="${prefix}blog.html" id="link-blog">Blog</a>
                 <a href="${prefix}resume.html" id="link-resume">Resume</a>
             </div>
         </nav>
