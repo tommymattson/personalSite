@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog | Thomas Mattson</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="main.js" defer></script>
+</head>
+<body>
+
+    <div class="container">
+        
+        <my-header></my-header>
+
+        <header class="hero" style="margin-bottom: 3rem;">
+            <h1>Insights & Retrospectives</h1>
+            <p>Thoughts on systems, automation, and the operational side of tech.</p>
+        </header>
+
+        <div class="grid">
+            
+            <article class="card">
+                <span class="date" style="font-size: 0.8rem; margin-bottom: 0.5rem; display:block; color: var(--accent);">FEB 2026</span>
+                <h3>How I Built an Autonomous AI Service Agent</h3>
+                <p>A breakdown of using Salesforce Agentforce to handle 20% of incoming support tickets without human intervention.</p>
+                <div class="tags">
+                    <span class="tag">AI</span>
+                    <span class="tag">Case Study</span>
+                </div>
+                <br>
+                <a href="posts/ai-agent-guide.html" class="card-link">Read Article →</a>
+            </article>
+
+            <article class="card">
+                <span class="date" style="font-size: 0.8rem; margin-bottom: 0.5rem; display:block; color: var(--accent);">JAN 2026</span>
+                <h3>Consolidating Sales Teams: A Retrospective</h3>
+                <p>Lessons learned from merging 5 distinct sales processes into one cohesive HubSpot pipeline.</p>
+                <div class="tags">
+                    <span class="tag">Operations</span>
+                    <span class="tag">HubSpot</span>
+                </div>
+                <br>
+                <a href="posts/sales-consolidation.html" class="card-link">Read Article →</a>
+            </article>
+
+            <article class="card" style="opacity: 0.7;">
+                <span class="date" style="font-size: 0.8rem; margin-bottom: 0.5rem; display:block;">COMING SOON</span>
+                <h3>The Future of Salesforce Flow</h3>
+                <p>Why low-code tools are becoming the standard for enterprise logic.</p>
+                <br>
+                <span style="font-size: 0.9rem; color: var(--text-secondary);">Drafting...</span>
+            </article>
+
+        </div>
+
+        <my-footer></my-footer>
+    </div>
+
+</body>
+</html>

@@ -3,45 +3,103 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Resume - [Your Name]</title>
+    <title>Resume | Thomas Mattson</title>
     <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Extra styles just for the resume list */
+        .job { margin-bottom: 2.5rem; border-left: 3px solid var(--accent); padding-left: 1.5rem; }
+        .job h3 { margin-bottom: 0.2rem; }
+        .company { color: var(--text-secondary); font-weight: 500; font-size: 0.95rem; margin-bottom: 0.5rem; display: block;}
+        .date { font-size: 0.85rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
+        .job ul { padding-left: 1rem; margin-top: 0.5rem; }
+        .job li { margin-bottom: 0.5rem; color: var(--text-primary); }
+    </style>
+    <script src="main.js" defer></script>
 </head>
 <body>
 
-    <header>
-        <div class="logo"><strong>[Your Name]</strong></div>
-        <nav>
-            <a href="index.html">Home</a>
-            <a href="blog.html">Blog</a>
-            <a href="resume.html">Resume</a>
-        </nav>
-    </header>
+    <div class="container">
+        <my-header></my-header>
 
-    <main>
-        <h1>Resume</h1>
-        <a href="assets/resume.pdf" target="_blank">Download PDF Version</a>
-        
-        <hr>
+        <header style="margin-bottom: 3rem;">
+            <h1>Resume</h1>
+            <p style="max-width: 600px; color: var(--text-secondary);">
+                Passionate about building systems that help organizations run better. 
+                I work to understand what's broken, design something that scales, and drive it to completion.
+            </p>
+            <div style="margin-top: 1rem;">
+                <a href="assets/resume.pdf" class="btn" download>Download PDF Version</a>
+            </div>
+        </header>
 
-        <h2>Experience</h2>
-        <div class="job">
-            <h3>Senior Developer @ Tech Corp</h3>
-            <small>2020 - Present</small>
-            <ul>
-                <li>Led a team of 5 developers to ship X product.</li>
-                <li>Reduced server costs by 20% using AWS Lambda.</li>
-            </ul>
+        <hr style="border: 0; border-top: 1px solid #eee; margin: 3rem 0;">
+
+        <div class="grid" style="grid-template-columns: 2fr 1fr; gap: 4rem;">
+            
+            <div>
+                <h2 style="margin-bottom: 2rem;">Experience</h2>
+
+                <div class="job">
+                    <h2>Fast Slow Motion &bull; Waco, TX<</h2>
+                    <h3>Senior Consultant</h3>
+                    <span class="date">Sep 2025 - Present</span>
+                    <h3>Consultant</h3>
+                    <span class="date">Dec 2024 - Sept 2025</span>
+                    <ul>
+                        <li>Being a blessing to businesses as they grow and scale</li>
+                    </ul>
+                </div>
+
+                <div class="job">
+                    <h2>Tondro Consulting &bull; Waco, TX</h2>
+                    <h3>Consultant</h3>
+                    <span class="date">May 2023 - Nov 2024</span>
+                    <ul>
+                        <li>Analyzed business processes and defined requirements for Salesforce solutions.</li>
+                        <li>Managed stakeholder engagement, ensuring alignment between business and technical teams.</li>
+                        <li>Facilitated UAT sessions and defined acceptance criteria for data migration projects.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div>
+                <h2 style="margin-bottom: 1.5rem;">Certifications</h2>
+                <div class="card" style="padding: 1.5rem; margin-bottom: 2rem;">
+                    <ul style="padding-left: 1rem; margin: 0;">
+                        <li>
+                            <a href="certifications.html#salesforce" style="text-decoration: none; color: inherit; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='inherit'">
+                            <strong>6x</strong> Salesforce Certified</a>
+                        </li>
+                        <li>
+                            <a href="certifications.html#hubspot" style="text-decoration: none; color: inherit; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='inherit'">
+                            <strong>5x</strong> Hubspot Certified</a>
+                        </li>
+                    </ul>
+                </div>
+
+                <h2 style="margin-bottom: 1.5rem;">Technical Skills</h2>
+                <div class="tags">
+                    <span class="tag">Prompt Engineering</span>
+                    <span class="tag">Process Diagramming</span>
+                    <span class="tag">Business Analysis</span>
+                    <span class="tag">Jira / Asana</span>
+                    <span class="tag">Lucid Chart</span>
+                </div>
+
+                <h2 style="margin-bottom: 1.5rem; margin-top: 2rem;">Education</h2>
+                <div style="margin-bottom: 1rem;">
+                    <strong>Westmont College</strong><br>
+                    <small style="color: var(--text-secondary);">BS in Data Analytics</small><br>
+                    <small style="color: var(--text-secondary);">BA in Economics & Business</small><br>
+                    <span class="date">2019 - 2023</span>
+                </div>
+            </div>
         </div>
 
-        <h2>Education</h2>
-        <div class="school">
-            <h3>BS Computer Science @ University Name</h3>
-            <small>Class of 2018</small>
-        </div>
-        
-        <h2>Skills</h2>
-        <p>JavaScript (ES6+), Python, Git, Docker, SQL</p>
-    </main>
+        <footer>
+            <p>&copy; 2026 Thomas Mattson.</p>
+        </footer>
+    </div>
 
 </body>
 </html>

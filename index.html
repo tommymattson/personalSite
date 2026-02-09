@@ -3,44 +3,82 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thomas Mattson</title>
+    <title>Thomas Mattson | Systems & Operations</title>
     <link rel="stylesheet" href="styles.css">
+    <script src="main.js" defer></script>
 </head>
 <body>
 
-    <header>
-        <div class="logo"><strong>Thomas Mattson</strong></div>
-        <nav>
-            <a href="index.html">Home</a>
-            <a href="blog.html">Blog</a>
-            <a href="resume.html">Resume</a>
-        </nav>
-    </header>
+    <div class="container">
+        
+        <my-header></my-header>
 
-    <main>
         <section class="hero">
-            <h1>Hi, I'm Thomas.</h1>
-            <div class="hero-subtitle">I build accessible web applications and write about technology.</div>
-            <p>
-                Currently, I am working as a [Your Job Title] at [Company]. 
-                I specialize in [Skill 1], [Skill 2], and [Skill 3]. 
-                When I'm not coding, I'm likely [Hobby].
-            </p>
-            <a href="mailto:your@email.com" class="btn">Get in Touch</a>
+            <img src="assets/Profile Pic.png" alt="Thomas Mattson" class="profile-pic">
+            
+            <div>
+                <h1>Building systems that help organizations run better.</h1>
+                <p>
+                    I'm a Senior Consultant based in Waco, TX. I tackle messy, undefined problems 
+                    to design scalable technical solutions that drive real business impact.
+                </p>
+                <a href="mailto:tdmattson21@gmail.com" class="btn">Get in Touch →</a>
+            </div>
         </section>
 
-        <section class="projects">
-            <h2>Featured Work</h2>
-            <ul>
-                <li><strong>Project Alpha:</strong> A React dashboard for tracking crypto.</li>
-                <li><strong>Project Beta:</strong> An open-source CLI tool for productivity.</li>
-            </ul>
-        </section>
-    </main>
+        <h2 style="margin-bottom: 1.5rem;">Selected Work</h2>
+        <section class="grid">
 
-    <footer>
-        &copy; 2024 [Your Name]. Hosted on GitHub Pages.
-    </footer>
+            <article class="card">
+                <h3>Top 5 Bagels</h3>
+                <p>Ranking my all time favorite bagel spots + a lament on Waco's lack of a bagel destination</p>
+                <br>
+                <a href="blog.html" class="card-link">Read Blog →</a>
+                <div class="tags">
+                    <span class="tag">Food Reviews</span>
+                    <span class="tag">Bagels and Coffee</span>
+                </div>
+            </article>
+
+            <article class="card">
+                <h3>Autonomous AI Service Agent</h3>
+                <p>Some case study or generic blurb about an Agentforce project</p>
+                <div class="tags">
+                    <span class="tag">Salesforce Agentforce</span>
+                    <span class="tag">Prompt Engineering</span>
+                </div>
+                <br>
+                <a href="resume.html" class="card-link">View Details →</a>
+            </article>
+
+            <article class="card">
+                <h3>Protein = Health?</h3>
+                <p>Protein coffee? Protein iced tea? Protein is being packed into everything these days. Why? And is it even good for your body to ingest protein through liquids?</p>
+                <br>
+                <a href="blog.html" class="card-link">Read Blog →</a>
+                <div class="tags">
+                    <span class="tag">Commentary</span>
+                    <span class="tag">Society</span>
+                </div>
+            </article>
+
+            <article class="card">
+                <h3>Sales Process Consolidation</h3>
+                <p>Some case study or blurb</p>
+                <div class="tags">
+                    <span class="tag">Process Mapping</span>
+                    <span class="tag">Cost Reduction</span>
+                </div>
+                <br>
+                <a href="resume.html" class="card-link">View Details →</a>
+            </article>
+
+            
+
+        </section>
+
+        <my-footer></my-footer>
+    </div>
 
 </body>
 </html>
