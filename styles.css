@@ -43,7 +43,7 @@ body {
     padding: 2rem;
 }
 
-/* Navigation - THIS is the section controlling your menu */
+/* Navigation */
 nav {
     display: flex;
     justify-content: space-between;
@@ -52,15 +52,29 @@ nav {
     margin-bottom: 3rem;
 }
 
-.logo { font-weight: 700; font-size: 1.25rem; color: var(--text-primary); text-decoration: none; }
+.logo { 
+    font-weight: 700; 
+    font-size: 1.25rem; 
+    color: var(--text-primary); 
+    text-decoration: none; 
+}
+
+.nav-links {
+    display: flex;
+    gap: 2rem;
+}
+
 .nav-links a {
     color: var(--text-secondary);
     text-decoration: none;
-    margin-left: 2rem;
     font-weight: 500;
     transition: color 0.2s;
 }
-.nav-links a:hover { color: var(--accent); }
+
+.nav-links a:hover, 
+.nav-links a.active { 
+    color: var(--accent); 
+}
 
 /* Hero Section */
 .hero {
@@ -295,5 +309,52 @@ details .grid {
     .hero {
         flex-direction: column;
         text-align: center;
+    }
+}
+
+/* RESPONSIVE HEADER */
+@media (max-width: 500px) {
+    nav {
+        flex-direction: column; /* Stack logo above links */
+        align-items: flex-start; /* Align everything to the left */
+        gap: 1.5rem;
+    }
+
+    .nav-links {
+        flex-direction: column; /* Stack links vertically */
+        gap: 1rem;
+        width: 100%;
+    }
+
+    .nav-links a {
+        margin-left: 0; /* Remove the left margin from desktop */
+        display: block;
+        font-size: 1.1rem;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid rgba(0,0,0,0.05); /* Optional: adds a separator line */
+    }
+    
+    /* Dark mode border adjustment */
+    @media (prefers-color-scheme: dark) {
+        .nav-links a { border-bottom-color: rgba(255,255,255,0.1); }
+    }
+}
+
+/* Resume specific layout */
+.resume-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr; /* Desktop: Experience left, Sidebar right */
+    gap: 4rem;
+}
+
+/* MOBILE RESPONSIVENESS */
+@media (max-width: 768px) {
+    .resume-grid {
+        grid-template-columns: 1fr; /* Stacks columns vertically */
+        gap: 2rem;                 /* Reduces gap so it looks tighter on phones */
+    }
+    
+    header h1 {
+        font-size: 2.5rem;         /* Slightly smaller title for small screens */
     }
 }

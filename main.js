@@ -10,7 +10,7 @@ class MyHeader extends HTMLElement {
         <nav>
             <a href="/" class="logo">Thomas Mattson</a>
             <div class="nav-links">
-                <a href="/" id="link-home">Work</a>
+                <a href="/" id="link-home">Home</a>
                 <a href="/blog/" id="link-blog">Blog</a>
                 <a href="/resume/" id="link-resume">Resume</a>
             </div>
@@ -25,6 +25,7 @@ class MyFooter extends HTMLElement {
         <footer>
             <p>
                 <a href="https://linkedin.com/in/thomas-d-mattson" target="_blank" style="color: inherit;">LinkedIn</a> 
+                &bull; <a href="https://github.com/tommymattson" target="_blank" style="color: inherit;">GitHub</a> 
                 &bull; &copy; 2026 Thomas Mattson
             </p>
         </footer>
