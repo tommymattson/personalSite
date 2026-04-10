@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculators | Thomas Mattson</title>
+    <link rel="stylesheet" href="../styles.css">
+    <script src="../main.js" defer></script>
+    <style>
+        .page-intro { margin-bottom: 2.5rem; max-width: 650px; }
+        .page-intro h1 {
+            font-size: 2.5rem; font-weight: 800;
+            letter-spacing: -0.04rem; line-height: 1.15; margin-bottom: 0.75rem;
+        }
+        .page-intro p { font-size: 1.15rem; color: var(--text-secondary); }
+
+        .calc-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem; margin-bottom: 4rem;
+        }
+
+        .calc-card {
+            background: var(--card-bg); padding: 2rem;
+            border-radius: var(--radius); box-shadow: var(--shadow);
+            border: 1px solid rgba(0,0,0,0.05);
+            transition: transform 0.2s; display: flex;
+            flex-direction: column; justify-content: space-between;
+        }
+        .calc-card:hover { transform: translateY(-5px); }
+
+        .calc-icon {
+            font-size: 2rem; margin-bottom: 1rem;
+            width: 52px; height: 52px; display: flex;
+            align-items: center; justify-content: center;
+            background: rgba(37,99,235,0.08); border-radius: 12px;
+        }
+        @media (prefers-color-scheme: dark) {
+            .calc-icon { background: rgba(96,165,250,0.12); }
+        }
+
+        .calc-card h3 { margin: 0 0 0.5rem; font-size: 1.2rem; }
+        .calc-card p { color: var(--text-secondary); font-size: 0.92rem; margin: 0 0 1.25rem; flex-grow: 1; }
+        .calc-card .card-link { color: var(--accent); text-decoration: none; font-weight: 600; font-size: 0.9rem; }
+        .calc-card .tags { margin-top: 0.75rem; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <my-header></my-header>
+
+    <section class="page-intro">
+        <h1>Calculators</h1>
+        <p>Interactive tools to help you make smarter decisions — whether you're evaluating a new car, renting out a property, or building a business case for automation.</p>
+    </section>
+
+    <div class="calc-grid">
+
+        <article class="calc-card">
+            <div>
+                <div class="calc-icon">
+                    <svg width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+                </div>
+                <h3>Task Automation ROI</h3>
+                <p>Calculate the return on investment for automating repetitive tasks. Input salary, time spent, and automation cost to find your break-even point and annual savings.</p>
+            </div>
+            <a href="automation-roi/" class="card-link">Open Calculator →</a>
+            <div class="tags">
+                <span class="tag">Business</span>
+                <span class="tag">ROI</span>
+            </div>
+        </article>
+
+        <article class="calc-card">
+            <div>
+                <div class="calc-icon">
+                    <svg width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                </div>
+                <h3>Rent My House</h3>
+                <p>Estimate how much you could rent your Ventura County home for based on zip code, property type, features, and current market data.</p>
+            </div>
+            <a href="../demo/" class="card-link">Open Calculator →</a>
+            <div class="tags">
+                <span class="tag">Property</span>
+                <span class="tag">Ventura County</span>
+            </div>
+        </article>
+
+        <article class="calc-card">
+            <div>
+                <div class="calc-icon">
+                    <svg width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M16 8l-4 4-4-4"/><path d="M12 12v6"/></svg>
+                </div>
+                <h3>Gas Savings</h3>
+                <p>Compare fuel costs between your current car and a more efficient one. See cumulative savings, break-even date, and annual projections.</p>
+            </div>
+            <a href="../gas-calculator/" class="card-link">Open Calculator →</a>
+            <div class="tags">
+                <span class="tag">Auto</span>
+                <span class="tag">Finance</span>
+            </div>
+        </article>
+
+    </div>
+
+    <my-footer></my-footer>
+</div>
+
+</body>
+</html>

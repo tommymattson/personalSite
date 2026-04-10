@@ -14,8 +14,7 @@ class MyHeader extends HTMLElement {
                 <a href="/" id="link-home">Home</a>
                 <a href="/blog/" id="link-blog">Blog</a>
                 <a href="/resume/" id="link-resume">Resume</a>
-                <a href="/gas-calculator/" id="link-gas">Gas Calculator</a>
-                <a href="/demo/" id="link-demo">Rent Calculator</a>
+                <a href="/calculators/" id="link-calc">Calculators</a>
             </div>
         </nav>
         `;
