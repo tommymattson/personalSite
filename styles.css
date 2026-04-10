@@ -43,24 +43,84 @@ body {
     padding: 2rem;
 }
 
-/* Navigation - THIS is the section controlling your menu */
+/* Navigation */
 nav {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 1.5rem 0;
     margin-bottom: 3rem;
+    flex-wrap: wrap;
 }
 
-.logo { font-weight: 700; font-size: 1.25rem; color: var(--text-primary); text-decoration: none; }
+.nav-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.logo {
+    font-weight: 700;
+    font-size: 1.25rem;
+    color: var(--text-primary);
+    text-decoration: none;
+}
+
+/* Hamburger toggle — hidden on desktop */
+.nav-toggle {
+    display: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.5rem;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.hamburger,
+.hamburger::before,
+.hamburger::after {
+    display: block;
+    width: 22px;
+    height: 2px;
+    background: var(--text-primary);
+    border-radius: 2px;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    position: relative;
+}
+
+.hamburger::before,
+.hamburger::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    width: 22px;
+}
+
+.hamburger::before { top: -7px; }
+.hamburger::after  { top: 7px; }
+
+/* Animate to X when open */
+.nav-toggle.active .hamburger { background: transparent; }
+.nav-toggle.active .hamburger::before { top: 0; transform: rotate(45deg); }
+.nav-toggle.active .hamburger::after  { top: 0; transform: rotate(-45deg); }
+
+.nav-links {
+    display: flex;
+    gap: 2rem;
+}
+
 .nav-links a {
     color: var(--text-secondary);
     text-decoration: none;
-    margin-left: 2rem;
     font-weight: 500;
     transition: color 0.2s;
 }
-.nav-links a:hover { color: var(--accent); }
+
+.nav-links a:hover,
+.nav-links a.active {
+    color: var(--accent);
+}
 
 /* Hero Section */
 .hero {
@@ -295,5 +355,73 @@ details .grid {
     .hero {
         flex-direction: column;
         text-align: center;
+    }
+}
+
+/* RESPONSIVE HEADER — collapsible dropdown on mobile */
+@media (max-width: 600px) {
+    .nav-toggle { display: block; }
+
+    .nav-links {
+        /* Hidden by default on mobile */
+        display: none;
+        flex-direction: column;
+        gap: 0;
+        width: 100%;
+        margin-top: 0.75rem;
+        background: var(--card-bg);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        overflow: hidden;
+    }
+
+    .nav-links.open {
+        display: flex;
+        animation: dropIn 0.25s ease;
+    }
+
+    @keyframes dropIn {
+        from { opacity: 0; transform: translateY(-8px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .nav-links a {
+        display: block;
+        padding: 0.85rem 1.25rem;
+        font-size: 1rem;
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+        transition: background 0.15s;
+    }
+
+    .nav-links a:last-child { border-bottom: none; }
+
+    .nav-links a:hover,
+    .nav-links a:active {
+        background: rgba(0,0,0,0.03);
+    }
+
+    @media (prefers-color-scheme: dark) {
+        .nav-links a { border-bottom-color: rgba(255,255,255,0.08); }
+        .nav-links a:hover,
+        .nav-links a:active { background: rgba(255,255,255,0.05); }
+    }
+}
+
+/* Resume specific layout */
+.resume-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr; /* Desktop: Experience left, Sidebar right */
+    gap: 4rem;
+}
+
+/* MOBILE RESPONSIVENESS */
+@media (max-width: 768px) {
+    .resume-grid {
+        grid-template-columns: 1fr; /* Stacks columns vertically */
+        gap: 2rem;                 /* Reduces gap so it looks tighter on phones */
+    }
+    
+    header h1 {
+        font-size: 2.5rem;         /* Slightly smaller title for small screens */
     }
 }

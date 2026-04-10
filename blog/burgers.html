@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Top 5 Burgers | Thomas Mattson</title>
+    
+    <link rel="stylesheet" href="/styles.css">
+    <script src="../main.js" defer></script>
+
+    <style>
+        /* Specific styles for Review Posts */
+        .review-item {
+            margin-bottom: 3rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+        .review-item:last-child { border-bottom: none; }
+        
+        .rank-badge {
+            background-color: var(--accent);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            display: inline-block;
+            margin-bottom: 0.5rem;
+        }
+
+        .matrix-score {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            background: rgba(0,0,0,0.03);
+            padding: 1rem;
+            border-radius: 8px;
+        }
+        
+        /* Image placeholder style */
+        .burger-img {
+            width: 100%;
+            height: 300px;
+            background-color: #ddd; /* Placeholder grey */
+            border-radius: var(--radius);
+            margin: 1.5rem 0;
+            object-fit: cover;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        
+        <my-header></my-header>
+
+        <article class="article-content">
+            <div class="post-header">
+                <div class="tags" style="margin-bottom: 1rem;">
+                    <span class="tag">Food Reviews</span>
+                    <span class="tag">Burgers</span>
+                </div>
+                <h1>Top 5 Burgers: The Price vs. Quality Matrix</h1>
+                <span class="post-meta">February 10, 2026 &bull; 5 min read</span>
+            </div>
+
+            <hr style="margin: 3rem 0; border: 0; border-top: 1px solid rgba(0,0,0,0.1);">
+
+            <div class="review-item">
+                <span class="rank-badge">#5</span>
+                <h2>The "Classic" at Local Joint</h2>
+                
+                <div class="burger-img">Image Placeholder: Juicy Burger Photo</div>
+
+                <p>
+                    Sometimes you just need consistency. The Local Joint delivers a burger that tastes exactly the same 
+                    on Tuesday as it does on Saturday. It's not changing the world, but it's comforting.
+                </p>
+                <div class="matrix-score">
+                    <span>💰 Price: $$</span>
+                    <span>⭐ Quality: 7/10</span>
+                </div>
+            </div>
+
+            <div class="review-item">
+                <span class="rank-badge">#4</span>
+                <h2>SmashCity</h2>
+                <div class="burger-img">Image Placeholder: Smash Burger Photo</div>
+                <p>
+                    The crust on this patty is legendary. They smash it so thin the edges are basically lace. 
+                    However, it loses points because the bun falls apart halfway through eating.
+                </p>
+                <div class="matrix-score">
+                    <span>💰 Price: $</span>
+                    <span>⭐ Quality: 8/10</span>
+                </div>
+            </div>
+
+            <div class="review-item">
+                <span class="rank-badge">#3</span>
+                <h2>The Bistro Truffle</h2>
+                <div class="burger-img">Image Placeholder: Fancy Burger Photo</div>
+                <p>
+                    This is the "special occasion" burger. High quality beef, truffle oil, arugula. 
+                    It's delicious, but at $24 without fries, it takes a hit on the Matrix.
+                </p>
+                <div class="matrix-score">
+                    <span>💰 Price: $$$</span>
+                    <span>⭐ Quality: 9.5/10</span>
+                </div>
+            </div>
+
+            <div style="margin-top: 4rem; background: var(--card-bg); padding: 2rem; border-radius: var(--radius); text-align: center;">
+                <h3>Agree? Disagree?</h3>
+                <p>Let me know your favorite spot on LinkedIn.</p>
+                <a href="../blog.html" class="btn">← Back to All Posts</a>
+            </div>
+
+        </article>
+
+        <my-footer></my-footer>
+    </div>
+
+</body>
+</html>
