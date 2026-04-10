@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Lifetime Value Calculator</title>
+    <link rel="stylesheet" href="../../styles.css">
+    <script src="../../main.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --bg-color:#ffffff;--text-primary:#111827;--text-secondary:#4b5563;
+            --accent:#2563eb;--accent-hover:#1d4ed8;--card-bg:#ffffff;
+            --shadow:0 4px 6px -1px rgba(0,0,0,0.1),0 2px 4px -1px rgba(0,0,0,0.06);--radius:12px;
+        }
+        body { font-family:'Inter',system-ui,-apple-system,sans-serif; background:#f9fafb; color:var(--text-primary); margin:0; padding:2rem 1rem; line-height:1.5; }
+        .container { max-width:800px; margin:0 auto; }
+
+        .page-intro { margin-bottom:2rem; text-align:center; }
+        .page-intro h1 { font-size:2.2rem; font-weight:800; letter-spacing:-0.04rem; line-height:1.15; margin-bottom:0.5rem; }
+        .page-intro p { font-size:1.05rem; color:var(--text-secondary); max-width:580px; margin:0 auto; }
+
+        .calc-form { background:var(--card-bg); border-radius:var(--radius); box-shadow:var(--shadow); border:1px solid rgba(0,0,0,0.05); padding:2rem; margin-bottom:2.5rem; }
+        .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:1.25rem; }
+        @media(max-width:600px){ .form-grid{grid-template-columns:1fr;} }
+
+        .form-group { display:flex; flex-direction:column; gap:0.3rem; }
+        .form-group label { font-weight:600; font-size:0.8rem; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.04em; }
+        .form-group .hint { font-weight:400; font-size:0.72rem; color:var(--text-secondary); text-transform:none; letter-spacing:0; }
+        .form-group input { padding:0.65rem 0.85rem; border:1.5px solid rgba(0,0,0,0.12); border-radius:8px; font-size:1rem; font-family:inherit; background:var(--bg-color); color:var(--text-primary); transition:border-color 0.2s; }
+        .form-group input:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(37,99,235,0.15); }
+
+        .calc-btn { display:block; width:100%; margin-top:1.5rem; padding:0.9rem; font-size:1.05rem; font-weight:700; font-family:inherit; background:var(--accent); color:#fff; border:none; border-radius:8px; cursor:pointer; transition:background 0.2s,transform 0.1s; }
+        .calc-btn:hover { background:var(--accent-hover); transform:translateY(-1px); }
+
+        .results { display:none; }
+        .results.visible { display:block; animation:fadeUp 0.4s ease; }
+        @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+
+        .hero-card { background:linear-gradient(135deg,var(--accent),#1d4ed8); border-radius:var(--radius); padding:2.25rem 1.5rem; margin-bottom:1.5rem; text-align:center; color:#fff; }
+        .hero-card .hero-value { font-size:3rem; font-weight:800; line-height:1.1; margin-bottom:0.2rem; }
+        .hero-card .hero-sub { font-size:1rem; opacity:0.85; }
+        .hero-card .hero-label { font-size:0.75rem; text-transform:uppercase; letter-spacing:0.06em; opacity:0.7; }
+        @media(max-width:600px){ .hero-card .hero-value{font-size:2.4rem;} }
+
+        .stat-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:0.75rem; margin-bottom:1.5rem; }
+        .stat-card { background:var(--card-bg); border-radius:var(--radius); box-shadow:var(--shadow); border:1px solid rgba(0,0,0,0.05); padding:1rem 0.75rem; text-align:center; }
+        .stat-card .val { font-size:1.3rem; font-weight:800; color:var(--accent); }
+        .stat-card .val.green { color:#16a34a; }
+        .stat-card .lbl { font-size:0.65rem; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.04em; margin-top:0.15rem; }
+        @media(max-width:600px){ .stat-row{grid-template-columns:1fr 1fr;} .stat-card .val{font-size:1.15rem;} }
+
+        .chart-card { background:var(--card-bg); border-radius:var(--radius); box-shadow:var(--shadow); border:1px solid rgba(0,0,0,0.05); padding:1.5rem; margin-bottom:1.5rem; }
+        .chart-card h3 { margin:0 0 0.75rem; font-size:1rem; }
+        .chart-wrap canvas { width:100%!important; }
+        @media(max-width:600px){ .chart-card{padding:1rem;} .chart-card h3{font-size:0.9rem;} }
+
+        @media(prefers-color-scheme:dark){
+            body{background:#111827;color:#f9fafb;}
+            :root{--bg-color:#111827;--card-bg:#1f2937;--text-primary:#f9fafb;--text-secondary:#9ca3af;}
+            .form-group input{border-color:rgba(255,255,255,0.12);}
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <section class="page-intro">
+        <h1>Customer Lifetime Value</h1>
+        <p>Understand how much a single customer is worth to your business over time, and how improving retention or order value impacts your bottom line.</p>
+    </section>
+
+    <div class="calc-form">
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="avgOrder">Avg. Order Value ($)</label>
+                <div class="hint">Average revenue per transaction</div>
+                <input type="number" id="avgOrder" value="75" min="0" step="1">
+            </div>
+            <div class="form-group">
+                <label for="purchaseFreq">Purchase Frequency / Year</label>
+                <div class="hint">How many times a customer buys per year</div>
+                <input type="number" id="purchaseFreq" value="4" min="0.1" step="0.5">
+            </div>
+            <div class="form-group">
+                <label for="retention">Avg. Customer Lifespan (years)</label>
+                <div class="hint">How long customers stay active</div>
+                <input type="number" id="retention" value="3" min="0.5" step="0.5">
+            </div>
+            <div class="form-group">
+                <label for="margin">Profit Margin (%)</label>
+                <div class="hint">Your gross margin on each sale</div>
+                <input type="number" id="margin" value="40" min="0" max="100" step="1">
+            </div>
+            <div class="form-group">
+                <label for="acqCost">Customer Acquisition Cost ($)</label>
+                <div class="hint">Cost to acquire one new customer</div>
+                <input type="number" id="acqCost" value="50" min="0" step="1">
+            </div>
+            <div class="form-group">
+                <label for="totalCustomers">Total Customers (optional)</label>
+                <div class="hint">Scale to see total portfolio value</div>
+                <input type="number" id="totalCustomers" placeholder="e.g. 500" min="0" step="1">
+            </div>
+        </div>
+        <button class="calc-btn" onclick="calculate()">Calculate CLV</button>
+    </div>
+
+    <div class="results" id="results">
+        <div class="hero-card" id="heroCard"></div>
+        <div class="stat-row" id="statRow"></div>
+
+        <div class="chart-card">
+            <h3>Cumulative Value Over Customer Lifespan</h3>
+            <div class="chart-wrap"><canvas id="cumChart"></canvas></div>
+        </div>
+        <div class="chart-card">
+            <h3>Revenue vs. Profit vs. Acquisition Cost</h3>
+            <div class="chart-wrap"><canvas id="compChart"></canvas></div>
+        </div>
+        <div class="chart-card">
+            <h3>What-If: Improving Key Metrics by 10%</h3>
+            <div class="chart-wrap"><canvas id="whatIfChart"></canvas></div>
+        </div>
+    </div>
+
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const fmt=n=>'$'+Math.round(n).toLocaleString('en-US');
+const mob=()=>window.innerWidth<=600;
+const cf=s=>({family:'Inter',size:mob()?Math.max(s-2,9):s,weight:500});
+let ch1=null,ch2=null,ch3=null;
+
+function calculate(){
+    const aov=parseFloat($('avgOrder').value)||0;
+    const freq=parseFloat($('purchaseFreq').value)||0;
+    const years=parseFloat($('retention').value)||0;
+    const marginPct=(parseFloat($('margin').value)||0)/100;
+    const cac=parseFloat($('acqCost').value)||0;
+    const customers=parseInt($('totalCustomers').value)||0;
+
+    const annualRevenue=aov*freq;
+    const ltv=annualRevenue*years;
+    const ltvProfit=ltv*marginPct;
+    const netLTV=ltvProfit-cac;
+    const ltvCacRatio=cac>0?(ltvProfit/cac).toFixed(1):'∞';
+    const paybackMonths=annualRevenue*marginPct>0?Math.ceil(cac/(annualRevenue*marginPct/12)):0;
+
+    $('heroCard').innerHTML=`
+        <div class="hero-label">Customer Lifetime Value</div>
+        <div class="hero-value">${fmt(ltv)}</div>
+        <div class="hero-sub">${fmt(ltvProfit)} profit &bull; ${fmt(netLTV)} net of acquisition</div>`;
+
+    let stats=`
+        <div class="stat-card"><div class="val">${fmt(annualRevenue)}</div><div class="lbl">Annual Revenue / Customer</div></div>
+        <div class="stat-card"><div class="val">${fmt(ltvProfit)}</div><div class="lbl">Lifetime Profit</div></div>
+        <div class="stat-card"><div class="val green">${ltvCacRatio}x</div><div class="lbl">LTV : CAC Ratio</div></div>
+        <div class="stat-card"><div class="val">${paybackMonths}mo</div><div class="lbl">CAC Payback</div></div>`;
+    if(customers>0) stats+=`
+        <div class="stat-card"><div class="val green">${fmt(netLTV*customers)}</div><div class="lbl">Total Portfolio Value</div></div>
+        <div class="stat-card"><div class="val">${customers.toLocaleString()}</div><div class="lbl">Customers</div></div>`;
+    $('statRow').innerHTML=stats;
+
+    const dk=window.matchMedia('(prefers-color-scheme:dark)').matches;
+    const gc=dk?'rgba(255,255,255,0.08)':'rgba(0,0,0,0.06)';
+    const tc=dk?'#d1d5db':'#6b7280';
+    const m=mob();
+
+    // 1. Cumulative value over lifespan
+    if(ch1)ch1.destroy();
+    const maxYr=Math.ceil(years);
+    const labels=[],cumRev=[],cumProfit=[],cacLine=[];
+    for(let y=1;y<=maxYr;y++){
+        const factor=y<=years?y:years;
+        labels.push(m?'Yr '+y:'Year '+y);
+        cumRev.push(Math.round(annualRevenue*factor));
+        cumProfit.push(Math.round(annualRevenue*factor*marginPct));
+        cacLine.push(cac);
+    }
+    ch1=new Chart($('cumChart'),{type:'line',data:{labels,datasets:[
+        {label:'Cumulative Revenue',data:cumRev,borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,0.08)',fill:true,tension:.3,pointRadius:m?3:5,pointBackgroundColor:'#2563eb',borderWidth:2.5},
+        {label:'Cumulative Profit',data:cumProfit,borderColor:'#16a34a',backgroundColor:'rgba(22,163,74,0.06)',fill:true,tension:.3,pointRadius:m?3:4,pointBackgroundColor:'#16a34a',borderWidth:2},
+        {label:'Acquisition Cost',data:cacLine,borderColor:'#ef4444',borderDash:[8,4],pointRadius:0,borderWidth:2,fill:false}
+    ]},options:{responsive:true,aspectRatio:m?1.3:2,interaction:{mode:'index',intersect:false},
+        plugins:{legend:{position:m?'bottom':'top',labels:{color:tc,font:cf(11),boxWidth:12,padding:12}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+fmt(c.raw)}}},
+        scales:{x:{ticks:{color:tc,font:cf(10)},grid:{color:gc}},y:{ticks:{color:tc,font:cf(10),callback:v=>'$'+(v/1000).toFixed(v>=1000?0:1)+'k',maxTicksLimit:m?5:8},grid:{color:gc}}}}});
+
+    // 2. Revenue vs Profit vs CAC bar
+    if(ch2)ch2.destroy();
+    ch2=new Chart($('compChart'),{type:'bar',data:{
+        labels:['Lifetime Revenue','Lifetime Profit','Acquisition Cost','Net LTV'],
+        datasets:[{data:[ltv,ltvProfit,cac,netLTV],
+        backgroundColor:['#2563eb','#16a34a','#ef4444',netLTV>=0?'#16a34a':'#dc2626'],borderRadius:6}]
+    },options:{responsive:true,aspectRatio:m?1.2:2.2,indexAxis:'y',
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmt(c.raw)}}},
+        scales:{x:{ticks:{color:tc,font:cf(10),callback:v=>'$'+(v/1000).toFixed(0)+'k',maxTicksLimit:5},grid:{color:gc}},
+        y:{ticks:{color:tc,font:cf(11)},grid:{display:false}}}}});
+
+    // 3. What-if: +10% to each metric
+    if(ch3)ch3.destroy();
+    const base=ltvProfit;
+    const scenarios=[
+        {label:'Baseline',val:base},
+        {label:'+10% Order Value',val:aov*1.1*freq*years*marginPct},
+        {label:'+10% Frequency',val:aov*(freq*1.1)*years*marginPct},
+        {label:'+10% Retention',val:aov*freq*(years*1.1)*marginPct},
+        {label:'+10% Margin',val:aov*freq*years*(marginPct*1.1)},
+        {label:'All +10%',val:aov*1.1*(freq*1.1)*(years*1.1)*(marginPct*1.1)}
+    ];
+    ch3=new Chart($('whatIfChart'),{type:'bar',data:{
+        labels:scenarios.map(s=>s.label),
+        datasets:[{data:scenarios.map(s=>Math.round(s.val)),
+        backgroundColor:scenarios.map((s,i)=>i===0?'#94a3b8':i===scenarios.length-1?'#16a34a':'#2563eb'),borderRadius:6}]
+    },options:{responsive:true,aspectRatio:m?1.1:2,
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{const pct=((c.raw-base)/base*100).toFixed(1);return fmt(c.raw)+(c.dataIndex>0?' ('+( pct>=0?'+':'')+pct+'%)':'');}}}},
+        scales:{x:{ticks:{color:tc,font:cf(m?9:11),maxRotation:m?45:0},grid:{display:false}},
+        y:{ticks:{color:tc,font:cf(10),callback:v=>'$'+v.toLocaleString(),maxTicksLimit:5},grid:{color:gc},beginAtZero:true}}}});
+
+    $('results').classList.add('visible');
+    $('results').scrollIntoView({behavior:'smooth',block:'start'});
+}
+document.addEventListener('keydown',e=>{if(e.key==='Enter')calculate();});
+</script>
+</body>
+</html>
