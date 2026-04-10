@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gas Savings Calculator | Thomas Mattson</title>
+    <link rel="stylesheet" href="../styles.css">
+    <script src="../main.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <style>
+        /* Calculator-specific styles */
+        .calc-intro { margin-bottom: 2.5rem; max-width: 650px; }
+        .calc-intro h1 { font-size: 2.5rem; font-weight: 800; letter-spacing: -0.04rem; line-height: 1.15; margin-bottom: 0.75rem; }
+        .calc-intro p { font-size: 1.15rem; color: var(--text-secondary); }
+
+        .calc-form {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(0,0,0,0.05);
+            padding: 2rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+        @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
+
+        .form-group { display: flex; flex-direction: column; gap: 0.35rem; }
+        .form-group label {
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+        .form-group input, .form-group select {
+            padding: 0.7rem 0.9rem;
+            border: 1.5px solid rgba(0,0,0,0.12);
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-color);
+            color: var(--text-primary);
+            transition: border-color 0.2s;
+        }
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+        }
+
+        .form-section-title {
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin: 1.5rem 0 0.75rem;
+            padding-top: 1.25rem;
+            border-top: 1px solid rgba(0,0,0,0.06);
+            color: var(--text-primary);
+        }
+        .form-section-title:first-child { margin-top: 0; border-top: none; padding-top: 0; }
+
+        .finance-fields { display: none; }
+        .finance-fields.visible { display: contents; }
+
+        .calc-btn {
+            display: block;
+            width: 100%;
+            margin-top: 1.75rem;
+            padding: 0.85rem;
+            font-size: 1.05rem;
+            font-weight: 700;
+            font-family: 'Inter', sans-serif;
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+        }
+        .calc-btn:hover { background: var(--accent-hover); transform: translateY(-1px); }
+
+        /* Results */
+        .results { display: none; }
+        .results.visible { display: block; }
+
+        .results-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.25rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(0,0,0,0.05);
+            padding: 1.5rem;
+            text-align: center;
+        }
+        .stat-card .stat-value {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--accent);
+            line-height: 1.2;
+        }
+        .stat-card .stat-value.positive { color: #16a34a; }
+        .stat-card .stat-value.negative { color: #dc2626; }
+        .stat-card .stat-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-top: 0.35rem;
+        }
+
+        .chart-card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(0,0,0,0.05);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        .chart-card h3 { margin-top: 0; margin-bottom: 1rem; font-size: 1.15rem; }
+        .chart-card canvas { width: 100% !important; max-height: 350px; }
+
+        .breakdown-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+        .breakdown-table th, .breakdown-table td {
+            padding: 0.65rem 0.9rem;
+            text-align: right;
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+        }
+        .breakdown-table th:first-child, .breakdown-table td:first-child { text-align: left; }
+        .breakdown-table th {
+            font-weight: 700;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--text-secondary);
+        }
+        .breakdown-table tr.break-even-row { background: rgba(37, 99, 235, 0.06); font-weight: 600; }
+
+        @media (prefers-color-scheme: dark) {
+            .form-group input, .form-group select { border-color: rgba(255,255,255,0.12); }
+            .form-section-title { border-top-color: rgba(255,255,255,0.08); }
+            .breakdown-table th, .breakdown-table td { border-bottom-color: rgba(255,255,255,0.08); }
+            .breakdown-table tr.break-even-row { background: rgba(96, 165, 250, 0.1); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <my-header></my-header>
+
+    <section class="calc-intro">
+        <h1>Gas Savings Calculator</h1>
+        <p>Compare fuel costs between your current car and a more efficient one. See how much you'd save each year, view cumulative savings over time, and find out when you break even on the upgrade cost.</p>
+    </section>
+
+    <div class="calc-form">
+        <div class="form-section-title" style="margin-top:0; border-top:none; padding-top:0;">Fuel Economy</div>
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="currentMpg">Current Car (MPG)</label>
+                <input type="number" id="currentMpg" value="22" min="1" step="0.1">
+            </div>
+            <div class="form-group">
+                <label for="newMpg">New Car (MPG)</label>
+                <input type="number" id="newMpg" value="35" min="1" step="0.1">
+            </div>
+        </div>
+
+        <div class="form-section-title">Driving &amp; Gas</div>
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="milesPerYear">Miles Driven Per Year</label>
+                <input type="number" id="milesPerYear" value="12000" min="0" step="100">
+            </div>
+            <div class="form-group">
+                <label for="gasPrice">Gas Price ($/gal)</label>
+                <input type="number" id="gasPrice" value="3.50" min="0" step="0.01">
+            </div>
+        </div>
+
+        <div class="form-section-title">Upgrade Cost</div>
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="priceDiff">Price Difference ($)</label>
+                <input type="number" id="priceDiff" value="8000" min="0" step="100">
+            </div>
+            <div class="form-group">
+                <label for="purchaseType">Purchase Type</label>
+                <select id="purchaseType">
+                    <option value="cash">Cash</option>
+                    <option value="finance">Finance</option>
+                </select>
+            </div>
+            <div class="finance-fields" id="financeFields">
+                <div class="form-group">
+                    <label for="apr">APR (%)</label>
+                    <input type="number" id="apr" value="5.9" min="0" step="0.1">
+                </div>
+            </div>
+            <div class="finance-fields" id="financeFields2">
+                <div class="form-group">
+                    <label for="loanTerm">Loan Term (months)</label>
+                    <input type="number" id="loanTerm" value="60" min="1" step="1">
+                </div>
+            </div>
+        </div>
+
+        <button class="calc-btn" onclick="calculate()">Calculate Savings</button>
+    </div>
+
+    <!-- Results Section -->
+    <div class="results" id="results">
+        <h2 style="margin-bottom: 1.25rem;">Your Results</h2>
+
+        <div class="results-summary" id="summaryCards"></div>
+
+        <div class="chart-card">
+            <h3>Cumulative Savings vs. Upgrade Cost</h3>
+            <canvas id="savingsChart"></canvas>
+        </div>
+
+        <div class="chart-card">
+            <h3>Annual Fuel Cost Comparison</h3>
+            <canvas id="barChart"></canvas>
+        </div>
+
+        <div class="chart-card">
+            <h3>Year-by-Year Breakdown</h3>
+            <div style="overflow-x: auto;">
+                <table class="breakdown-table" id="breakdownTable"></table>
+            </div>
+        </div>
+    </div>
+
+    <my-footer></my-footer>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+// Show/hide finance fields
+$('purchaseType').addEventListener('change', e => {
+    const show = e.target.value === 'finance';
+    document.querySelectorAll('.finance-fields').forEach(el => el.classList.toggle('visible', show));
+});
+
+let savingsChartInstance = null;
+let barChartInstance = null;
+
+function calculate() {
+    const currentMpg = parseFloat($('currentMpg').value);
+    const newMpg = parseFloat($('newMpg').value);
+    const miles = parseFloat($('milesPerYear').value);
+    const gas = parseFloat($('gasPrice').value);
+    const priceDiff = parseFloat($('priceDiff').value);
+    const isFinance = $('purchaseType').value === 'finance';
+    const apr = parseFloat($('apr').value) / 100;
+    const loanMonths = parseInt($('loanTerm').value);
+
+    if ([currentMpg, newMpg, miles, gas].some(v => isNaN(v) || v <= 0)) {
+        alert('Please fill in all fields with positive values.'); return;
+    }
+    if (isNaN(priceDiff) || priceDiff < 0) {
+        alert('Price difference must be zero or positive.'); return;
+    }
+
+    // Annual fuel costs
+    const currentAnnualGas = (miles / currentMpg) * gas;
+    const newAnnualGas = (miles / newMpg) * gas;
+    const annualSavings = currentAnnualGas - newAnnualGas;
+
+    // Total cost of the upgrade (with or without interest)
+    let totalUpgradeCost = priceDiff;
+    let monthlyPayment = 0;
+    if (isFinance && priceDiff > 0) {
+        const r = apr / 12;
+        if (r > 0) {
+            monthlyPayment = priceDiff * (r * Math.pow(1 + r, loanMonths)) / (Math.pow(1 + r, loanMonths) - 1);
+            totalUpgradeCost = monthlyPayment * loanMonths;
+        } else {
+            monthlyPayment = priceDiff / loanMonths;
+            totalUpgradeCost = priceDiff;
+        }
+    }
+
+    // Year-by-year data (10 years)
+    const years = 10;
+    const labels = [];
+    const cumSavings = [];
+    const costLine = [];
+    const rows = [];
+    let breakEvenYear = null;
+
+    for (let y = 1; y <= years; y++) {
+        const totalSaved = annualSavings * y;
+        // For financed: cost is sum of payments made up to that year
+        let costSoFar;
+        if (isFinance && priceDiff > 0) {
+            const monthsSoFar = Math.min(y * 12, loanMonths);
+            costSoFar = monthlyPayment * monthsSoFar;
+        } else {
+            costSoFar = priceDiff; // cash: paid upfront
+        }
+
+        labels.push('Year ' + y);
+        cumSavings.push(Math.round(totalSaved));
+        costLine.push(Math.round(totalUpgradeCost)); // total cost line is flat at total
+
+        const netSavings = totalSaved - totalUpgradeCost;
+        const isBreakEven = breakEvenYear === null && totalSaved >= totalUpgradeCost && totalUpgradeCost > 0;
+        if (isBreakEven) breakEvenYear = y;
+
+        rows.push({ year: y, currentCost: currentAnnualGas * y, newCost: newAnnualGas * y, cumSaved: totalSaved, net: netSavings, isBreakEven });
+    }
+
+    // Fractional break-even
+    let breakEvenMonths = null;
+    if (annualSavings > 0 && totalUpgradeCost > 0) {
+        breakEvenMonths = Math.ceil((totalUpgradeCost / annualSavings) * 12);
+    }
+
+    // --- Render summary cards ---
+    const fmt = n => '$' + Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    let cardsHTML = `
+        <div class="stat-card">
+            <div class="stat-value">${fmt(annualSavings)}</div>
+            <div class="stat-label">Saved per Year on Gas</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">${fmt(annualSavings * 10)}</div>
+            <div class="stat-label">10-Year Fuel Savings</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">${fmt(totalUpgradeCost)}</div>
+            <div class="stat-label">Total Upgrade Cost${isFinance ? ' (w/ Interest)' : ''}</div>
+        </div>
+    `;
+    if (breakEvenMonths !== null && breakEvenMonths <= 120) {
+        const beYears = Math.floor(breakEvenMonths / 12);
+        const beMonths = breakEvenMonths % 12;
+        const beText = beYears > 0 ? `${beYears}y ${beMonths}m` : `${beMonths}m`;
+        cardsHTML += `
+            <div class="stat-card">
+                <div class="stat-value positive">${beText}</div>
+                <div class="stat-label">Break-Even Point</div>
+            </div>`;
+    } else if (totalUpgradeCost === 0) {
+        cardsHTML += `
+            <div class="stat-card">
+                <div class="stat-value positive">Day 1</div>
+                <div class="stat-label">Break-Even Point</div>
+            </div>`;
+    } else {
+        cardsHTML += `
+            <div class="stat-card">
+                <div class="stat-value negative">10+ yrs</div>
+                <div class="stat-label">Break-Even Point</div>
+            </div>`;
+    }
+    $('summaryCards').innerHTML = cardsHTML;
+
+    // --- Charts ---
+    const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const gridColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
+    const textColor = isDark ? '#d1d5db' : '#6b7280';
+
+    if (savingsChartInstance) savingsChartInstance.destroy();
+    savingsChartInstance = new Chart($('savingsChart'), {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [
+                {
+                    label: 'Cumulative Gas Savings',
+                    data: cumSavings,
+                    borderColor: '#16a34a',
+                    backgroundColor: 'rgba(22, 163, 74, 0.08)',
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#16a34a',
+                    borderWidth: 2.5
+                },
+                {
+                    label: 'Total Upgrade Cost',
+                    data: costLine,
+                    borderColor: '#dc2626',
+                    borderDash: [8, 4],
+                    pointRadius: 0,
+                    borderWidth: 2,
+                    fill: false
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: { labels: { color: textColor, font: { family: 'Inter', weight: 600 } } },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => ctx.dataset.label + ': $' + ctx.raw.toLocaleString()
+                    }
+                }
+            },
+            scales: {
+                x: { ticks: { color: textColor }, grid: { color: gridColor } },
+                y: {
+                    ticks: { color: textColor, callback: v => '$' + v.toLocaleString() },
+                    grid: { color: gridColor }
+                }
+            }
+        }
+    });
+
+    // Bar chart - annual comparison
+    if (barChartInstance) barChartInstance.destroy();
+    barChartInstance = new Chart($('barChart'), {
+        type: 'bar',
+        data: {
+            labels: ['Current Car', 'New Car'],
+            datasets: [{
+                label: 'Annual Fuel Cost',
+                data: [Math.round(currentAnnualGas), Math.round(newAnnualGas)],
+                backgroundColor: ['#ef4444', '#16a34a'],
+                borderRadius: 8,
+                barThickness: 60
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: { label: ctx => '$' + ctx.raw.toLocaleString() + '/year' }
+                }
+            },
+            scales: {
+                x: { ticks: { color: textColor, font: { weight: 600 } }, grid: { display: false } },
+                y: {
+                    ticks: { color: textColor, callback: v => '$' + v.toLocaleString() },
+                    grid: { color: gridColor },
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // --- Breakdown table ---
+    let tableHTML = `
+        <thead><tr>
+            <th>Year</th>
+            <th>Current Car Fuel</th>
+            <th>New Car Fuel</th>
+            <th>Cumulative Savings</th>
+            <th>Net (Savings − Cost)</th>
+        </tr></thead><tbody>`;
+    rows.forEach(r => {
+        const cls = r.isBreakEven ? ' class="break-even-row"' : '';
+        const netSign = r.net >= 0 ? '+' : '−';
+        const netColor = r.net >= 0 ? 'color:#16a34a' : 'color:#dc2626';
+        tableHTML += `<tr${cls}>
+            <td>${r.year}</td>
+            <td>${fmt(r.currentCost)}</td>
+            <td>${fmt(r.newCost)}</td>
+            <td>${fmt(r.cumSaved)}</td>
+            <td style="${netColor};font-weight:600">${netSign}${fmt(r.net)}</td>
+        </tr>`;
+    });
+    tableHTML += '</tbody>';
+    $('breakdownTable').innerHTML = tableHTML;
+
+    // Show results
+    $('results').classList.add('visible');
+    $('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+</script>
+
+</body>
+</html>
