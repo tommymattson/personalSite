@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rent My Home Calculator</title>
+    <link rel="stylesheet" href="../../styles.css">
+    <script src="../../main.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #ffffff;
+            --text-primary: #111827;
+            --text-secondary: #4b5563;
+            --accent: #2563eb;
+            --accent-hover: #1d4ed8;
+            --card-bg: #ffffff;
+            --shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+            --radius: 12px;
+        }
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: #f9fafb; color: var(--text-primary);
+            margin: 0; padding: 2rem 1rem; line-height: 1.5;
+        }
+        .container { max-width: 800px; margin: 0 auto; }
+
+        .page-intro { margin-bottom: 2rem; text-align: center; }
+        .page-intro h1 { font-size: 2.2rem; font-weight: 800; letter-spacing: -0.04rem; line-height: 1.15; margin-bottom: 0.5rem; }
+        .page-intro p { font-size: 1.05rem; color: var(--text-secondary); max-width: 580px; margin: 0 auto; }
+
+        .calc-form {
+            background: var(--card-bg); border-radius: var(--radius);
+            box-shadow: var(--shadow); border: 1px solid rgba(0,0,0,0.05);
+            padding: 2rem; margin-bottom: 2.5rem;
+        }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+        @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
+
+        .form-group { display: flex; flex-direction: column; gap: 0.3rem; }
+        .form-group label {
+            font-weight: 600; font-size: 0.8rem; color: var(--text-secondary);
+            text-transform: uppercase; letter-spacing: 0.04em;
+        }
+        .form-group input {
+            padding: 0.65rem 0.85rem; border: 1.5px solid rgba(0,0,0,0.12);
+            border-radius: 8px; font-size: 1rem; font-family: inherit;
+            background: var(--bg-color); color: var(--text-primary); transition: border-color 0.2s;
+        }
+        .form-group input:focus {
+            outline: none; border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
+        }
+
+        .calc-btn {
+            display: block; width: 100%; margin-top: 1.5rem; padding: 0.9rem;
+            font-size: 1.05rem; font-weight: 700; font-family: inherit;
+            background: var(--accent); color: #fff; border: none; border-radius: 8px;
+            cursor: pointer; transition: background 0.2s, transform 0.1s;
+        }
+        .calc-btn:hover { background: var(--accent-hover); transform: translateY(-1px); }
+
+        .results { display: none; }
+        .results.visible { display: block; animation: fadeUp 0.4s ease; }
+        @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+
+        .cashflow-hero {
+            border-radius: var(--radius); padding: 2.25rem 1.5rem; margin-bottom: 1.5rem;
+            text-align: center; color: #fff;
+        }
+        .cashflow-hero.positive { background: linear-gradient(135deg,#16a34a,#15803d); }
+        .cashflow-hero.negative { background: linear-gradient(135deg,#dc2626,#b91c1c); }
+        .cashflow-hero .cf-value { font-size: 3rem; font-weight: 800; line-height: 1.1; margin-bottom: 0.2rem; }
+        .cashflow-hero .cf-sub { font-size: 1rem; opacity: 0.85; }
+        .cashflow-hero .cf-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.7; }
+        @media (max-width: 600px) { .cashflow-hero .cf-value { font-size: 2.4rem; } }
+
+        .stat-row {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(130px,1fr));
+            gap: 0.75rem; margin-bottom: 1.5rem;
+        }
+        .stat-card {
+            background: var(--card-bg); border-radius: var(--radius);
+            box-shadow: var(--shadow); border: 1px solid rgba(0,0,0,0.05);
+            padding: 1rem 0.75rem; text-align: center;
+        }
+        .stat-card .val { font-size: 1.3rem; font-weight: 800; color: var(--accent); }
+        .stat-card .val.green { color: #16a34a; }
+        .stat-card .val.red { color: #dc2626; }
+        .stat-card .lbl {
+            font-size: 0.65rem; font-weight: 600; color: var(--text-secondary);
+            text-transform: uppercase; letter-spacing: 0.04em; margin-top: 0.15rem;
+        }
+        @media (max-width: 600px) { .stat-row { grid-template-columns: 1fr 1fr; } .stat-card .val { font-size: 1.15rem; } }
+
+        .chart-card {
+            background: var(--card-bg); border-radius: var(--radius);
+            box-shadow: var(--shadow); border: 1px solid rgba(0,0,0,0.05);
+            padding: 1.5rem; margin-bottom: 1.5rem;
+        }
+        .chart-card h3 { margin: 0 0 0.75rem; font-size: 1rem; }
+        .chart-wrap canvas { width: 100% !important; }
+        @media (max-width: 600px) { .chart-card { padding: 1rem; } .chart-card h3 { font-size: 0.9rem; } }
+
+        @media (prefers-color-scheme: dark) {
+            body { background: #111827; color: #f9fafb; }
+            :root { --bg-color: #111827; --card-bg: #1f2937; --text-primary: #f9fafb; --text-secondary: #9ca3af; }
+            .form-group input { border-color: rgba(255,255,255,0.12); }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <section class="page-intro">
+        <h1>Rental Income Calculator</h1>
+        <p>Enter what you think your home could rent for and your current payment to see your true cash flow after management fees and a repair reserve.</p>
+    </section>
+
+    <div class="calc-form">
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="monthlyRent">Expected Monthly Rent ($)</label>
+                <input type="number" id="monthlyRent" value="3000" min="0" step="50">
+            </div>
+            <div class="form-group">
+                <label for="mortgage">Current Monthly Payment ($)</label>
+                <input type="number" id="mortgage" value="2200" min="0" step="50">
+            </div>
+            <div class="form-group">
+                <label for="repairPct">Repair Reserve (%)</label>
+                <input type="number" id="repairPct" value="10" min="0" max="50" step="1">
+            </div>
+            <div class="form-group">
+                <label for="mgmtPct">Property Manager Fee (%)</label>
+                <input type="number" id="mgmtPct" value="10" min="0" max="30" step="1">
+            </div>
+        </div>
+        <button class="calc-btn" onclick="calculate()">Calculate Cash Flow</button>
+    </div>
+
+    <div class="results" id="results">
+        <div class="cashflow-hero" id="heroCard"></div>
+        <div class="stat-row" id="statRow"></div>
+
+        <div class="chart-card">
+            <h3>Monthly Breakdown</h3>
+            <div class="chart-wrap"><canvas id="breakdownChart"></canvas></div>
+        </div>
+        <div class="chart-card">
+            <h3>Where Your Rent Goes</h3>
+            <div class="chart-wrap"><canvas id="pieChart"></canvas></div>
+        </div>
+        <div class="chart-card">
+            <h3>5-Year Projection</h3>
+            <p style="font-size:0.8rem;color:var(--text-secondary);margin:-0.5rem 0 0.75rem;">Assumes 3% annual rent growth, costs stay flat.</p>
+            <div class="chart-wrap"><canvas id="projChart"></canvas></div>
+        </div>
+    </div>
+
+</div>
+<script>
+const $ = id => document.getElementById(id);
+const fmt = n => '$' + Math.round(n).toLocaleString('en-US');
+const mob = () => window.innerWidth <= 600;
+const cf = s => ({ family:'Inter', size: mob() ? Math.max(s-2,9) : s, weight:500 });
+let c1=null, c2=null, c3=null;
+
+function calculate() {
+    const rent = parseFloat($('monthlyRent').value)||0;
+    const mortgage = parseFloat($('mortgage').value)||0;
+    const repairPct = (parseFloat($('repairPct').value)||0)/100;
+    const mgmtPct = (parseFloat($('mgmtPct').value)||0)/100;
+
+    const repairRes = rent * repairPct;
+    const mgmtFee = rent * mgmtPct;
+    const netRent = rent - repairRes - mgmtFee;
+    const cashFlow = netRent - mortgage;
+    const annual = cashFlow * 12;
+    const pos = cashFlow >= 0;
+    const sign = pos ? '+' : '-';
+
+    $('heroCard').className = 'cashflow-hero ' + (pos?'positive':'negative');
+    $('heroCard').innerHTML = `
+        <div class="cf-label">Monthly Cash Flow</div>
+        <div class="cf-value">${sign}${fmt(Math.abs(cashFlow))}/mo</div>
+        <div class="cf-sub">${sign}${fmt(Math.abs(annual))} per year</div>`;
+
+    $('statRow').innerHTML = `
+        <div class="stat-card"><div class="val">${fmt(rent)}</div><div class="lbl">Gross Rent</div></div>
+        <div class="stat-card"><div class="val">${fmt(mgmtFee)}</div><div class="lbl">Mgmt Fee (${(mgmtPct*100).toFixed(0)}%)</div></div>
+        <div class="stat-card"><div class="val">${fmt(repairRes)}</div><div class="lbl">Repair Reserve</div></div>
+        <div class="stat-card"><div class="val">${fmt(netRent)}</div><div class="lbl">Net Rent</div></div>
+        <div class="stat-card"><div class="val">${fmt(mortgage)}</div><div class="lbl">Your Payment</div></div>
+        <div class="stat-card"><div class="val ${pos?'green':'red'}">${sign}${fmt(Math.abs(cashFlow))}</div><div class="lbl">Cash Flow</div></div>`;
+
+    const dk = window.matchMedia('(prefers-color-scheme:dark)').matches;
+    const gc = dk ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
+    const tc = dk ? '#d1d5db' : '#6b7280';
+    const m = mob();
+
+    if(c1) c1.destroy();
+    c1 = new Chart($('breakdownChart'),{type:'bar',data:{
+        labels:['Gross Rent','Mgmt Fee','Repairs','Payment','Cash Flow'],
+        datasets:[{data:[rent,-mgmtFee,-repairRes,-mortgage,cashFlow],
+        backgroundColor:['#2563eb','#f59e0b','#f97316','#ef4444',pos?'#16a34a':'#dc2626'],borderRadius:6}]
+    },options:{responsive:true,aspectRatio:m?1.2:2,plugins:{legend:{display:false},
+        tooltip:{callbacks:{label:c=>(c.raw>=0?'+':'-')+fmt(Math.abs(c.raw))}}},
+        scales:{x:{ticks:{color:tc,font:cf(10),maxRotation:m?45:0},grid:{display:false}},
+        y:{ticks:{color:tc,font:cf(10),callback:v=>(v<0?'-':'')+'$'+Math.abs(v).toLocaleString(),maxTicksLimit:6},grid:{color:gc}}}}});
+
+    if(c2) c2.destroy();
+    const pd = [{l:'Payment',v:mortgage,c:'#ef4444'},{l:'Mgmt Fee',v:mgmtFee,c:'#f59e0b'},{l:'Repairs',v:repairRes,c:'#f97316'}];
+    if(cashFlow>0) pd.push({l:'Your Profit',v:cashFlow,c:'#16a34a'});
+    const fp = pd.filter(d=>d.v>0);
+    c2 = new Chart($('pieChart'),{type:'doughnut',data:{labels:fp.map(d=>d.l),
+        datasets:[{data:fp.map(d=>Math.round(d.v)),backgroundColor:fp.map(d=>d.c),borderWidth:0}]},
+        options:{responsive:true,aspectRatio:m?1.3:2,cutout:'55%',
+        plugins:{legend:{position:m?'bottom':'right',labels:{color:tc,font:cf(11),boxWidth:12,padding:12}},
+        tooltip:{callbacks:{label:c=>{const t=c.dataset.data.reduce((a,b)=>a+b,0);return c.label+': '+fmt(c.raw)+' ('+Math.round(c.raw/t*100)+'%)'}}}}}});
+
+    if(c3) c3.destroy();
+    const pl=[],pn=[],pc=[],pcf=[];
+    for(let y=1;y<=5;y++){const g=Math.pow(1.03,y-1);const yr=rent*g;const yn=yr-yr*repairPct-yr*mgmtPct;
+        pl.push(m?'Yr '+y:'Year '+y);pn.push(Math.round(yn*12));pc.push(Math.round(mortgage*12));pcf.push(Math.round((yn-mortgage)*12));}
+    c3 = new Chart($('projChart'),{type:'bar',data:{labels:pl,datasets:[
+        {label:'Net Rent',data:pn,backgroundColor:'#2563eb',borderRadius:5,barPercentage:.7,categoryPercentage:.65},
+        {label:'Costs',data:pc,backgroundColor:dk?'#475569':'#cbd5e1',borderRadius:5,barPercentage:.7,categoryPercentage:.65},
+        {label:'Cash Flow',data:pcf,type:'line',borderColor:'#16a34a',backgroundColor:'rgba(22,163,74,0.08)',fill:true,tension:.3,pointRadius:m?4:5,pointBackgroundColor:'#16a34a',borderWidth:2.5}]},
+        options:{responsive:true,aspectRatio:m?1.2:2,
+        plugins:{legend:{position:m?'bottom':'top',labels:{color:tc,font:cf(11),boxWidth:12,padding:12}},
+        tooltip:{callbacks:{label:c=>c.dataset.label+': '+fmt(c.raw)+'/yr'}}},
+        scales:{x:{ticks:{color:tc,font:cf(11)},grid:{display:false}},
+        y:{ticks:{color:tc,font:cf(10),callback:v=>(v<0?'-':'')+'$'+(Math.abs(v)/1000).toFixed(0)+'k',maxTicksLimit:m?5:8},grid:{color:gc}}}}});
+
+    $('results').classList.add('visible');
+    $('results').scrollIntoView({behavior:'smooth',block:'start'});
+}
+document.addEventListener('keydown',e=>{if(e.key==='Enter')calculate();});
+</script>
+</body>
+</html>
