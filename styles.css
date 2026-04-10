@@ -50,14 +50,60 @@ nav {
     align-items: center;
     padding: 1.5rem 0;
     margin-bottom: 3rem;
+    flex-wrap: wrap;
 }
 
-.logo { 
-    font-weight: 700; 
-    font-size: 1.25rem; 
-    color: var(--text-primary); 
-    text-decoration: none; 
+.nav-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
 }
+
+.logo {
+    font-weight: 700;
+    font-size: 1.25rem;
+    color: var(--text-primary);
+    text-decoration: none;
+}
+
+/* Hamburger toggle — hidden on desktop */
+.nav-toggle {
+    display: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.5rem;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.hamburger,
+.hamburger::before,
+.hamburger::after {
+    display: block;
+    width: 22px;
+    height: 2px;
+    background: var(--text-primary);
+    border-radius: 2px;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    position: relative;
+}
+
+.hamburger::before,
+.hamburger::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    width: 22px;
+}
+
+.hamburger::before { top: -7px; }
+.hamburger::after  { top: 7px; }
+
+/* Animate to X when open */
+.nav-toggle.active .hamburger { background: transparent; }
+.nav-toggle.active .hamburger::before { top: 0; transform: rotate(45deg); }
+.nav-toggle.active .hamburger::after  { top: 0; transform: rotate(-45deg); }
 
 .nav-links {
     display: flex;
@@ -71,9 +117,9 @@ nav {
     transition: color 0.2s;
 }
 
-.nav-links a:hover, 
-.nav-links a.active { 
-    color: var(--accent); 
+.nav-links a:hover,
+.nav-links a.active {
+    color: var(--accent);
 }
 
 /* Hero Section */
@@ -312,31 +358,52 @@ details .grid {
     }
 }
 
-/* RESPONSIVE HEADER */
-@media (max-width: 500px) {
-    nav {
-        flex-direction: column; /* Stack logo above links */
-        align-items: flex-start; /* Align everything to the left */
-        gap: 1.5rem;
-    }
+/* RESPONSIVE HEADER — collapsible dropdown on mobile */
+@media (max-width: 600px) {
+    .nav-toggle { display: block; }
 
     .nav-links {
-        flex-direction: column; /* Stack links vertically */
-        gap: 1rem;
+        /* Hidden by default on mobile */
+        display: none;
+        flex-direction: column;
+        gap: 0;
         width: 100%;
+        margin-top: 0.75rem;
+        background: var(--card-bg);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        overflow: hidden;
+    }
+
+    .nav-links.open {
+        display: flex;
+        animation: dropIn 0.25s ease;
+    }
+
+    @keyframes dropIn {
+        from { opacity: 0; transform: translateY(-8px); }
+        to   { opacity: 1; transform: translateY(0); }
     }
 
     .nav-links a {
-        margin-left: 0; /* Remove the left margin from desktop */
         display: block;
-        font-size: 1.1rem;
-        padding: 0.5rem 0;
-        border-bottom: 1px solid rgba(0,0,0,0.05); /* Optional: adds a separator line */
+        padding: 0.85rem 1.25rem;
+        font-size: 1rem;
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+        transition: background 0.15s;
     }
-    
-    /* Dark mode border adjustment */
+
+    .nav-links a:last-child { border-bottom: none; }
+
+    .nav-links a:hover,
+    .nav-links a:active {
+        background: rgba(0,0,0,0.03);
+    }
+
     @media (prefers-color-scheme: dark) {
-        .nav-links a { border-bottom-color: rgba(255,255,255,0.1); }
+        .nav-links a { border-bottom-color: rgba(255,255,255,0.08); }
+        .nav-links a:hover,
+        .nav-links a:active { background: rgba(255,255,255,0.05); }
     }
 }
 
