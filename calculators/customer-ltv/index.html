@@ -19,6 +19,15 @@
         .page-intro { margin-bottom:2rem; text-align:center; }
         .page-intro h1 { font-size:2.2rem; font-weight:800; letter-spacing:-0.04rem; line-height:1.15; margin-bottom:0.5rem; }
         .page-intro p { font-size:1.05rem; color:var(--text-secondary); max-width:580px; margin:0 auto; }
+        .page-intro .subtitle {
+            font-size: 1rem; color: var(--accent); font-weight: 600;
+            margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;
+        }
+
+        .back-link {
+            display: inline-block; margin-bottom: 1.5rem;
+            color: var(--accent); text-decoration: none; font-weight: 600; font-size: 0.9rem;
+        }
 
         .calc-form { background:var(--card-bg); border-radius:var(--radius); box-shadow:var(--shadow); border:1px solid rgba(0,0,0,0.05); padding:2rem; margin-bottom:2.5rem; }
         .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:1.25rem; }
@@ -64,8 +73,10 @@
 </head>
 <body>
 <div class="container">
+    <a href="../" class="back-link">&larr; All Calculators</a>
 
     <section class="page-intro">
+        <div class="subtitle">Understanding how loyalty impacts your bottle line</div>
         <h1>Customer Lifetime Value</h1>
         <p>Understand how much a single customer is worth to your business over time, and how improving retention or order value impacts your bottom line.</p>
     </section>
