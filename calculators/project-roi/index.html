@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project ROI &amp; CapEx Justification | Thomas Mattson</title>
+    <link rel="stylesheet" href="../../styles.css">
+    <link rel="stylesheet" href="../calculators.css">
+    <script src="../../main.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <style>
+        /* Page-specific: dynamic row grid */
+        .cost-row, .benefit-row {
+            display: grid; grid-template-columns: 2fr 1fr auto;
+            gap: 0.75rem; align-items: end; margin-bottom: 0.75rem;
+        }
+        @media (max-width: 600px) {
+            .cost-row, .benefit-row {
+                grid-template-columns: 1fr auto;
+            }
+            .cost-row .form-group:first-child,
+            .benefit-row .form-group:first-child {
+                grid-column: 1 / -1;
+            }
+        }
+
+        /* Sensitivity sliders */
+        .sensitivity-panel {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(0,0,0,0.05);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .sensitivity-panel h3 {
+            margin: 0 0 1rem;
+            font-size: 1.05rem;
+        }
+        .slider-group {
+            margin-bottom: 1.25rem;
+        }
+        .slider-group:last-child { margin-bottom: 0; }
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 0.35rem;
+        }
+        .slider-label {
+            font-weight: 600;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+        .slider-value {
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            min-width: 80px;
+            text-align: right;
+        }
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(0,0,0,0.08);
+            outline: none;
+            cursor: pointer;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--accent);
+            border: 2px solid #fff;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+            cursor: pointer;
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--accent);
+            border: 2px solid #fff;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+            cursor: pointer;
+        }
+        @media (prefers-color-scheme: dark) {
+            input[type="range"] {
+                background: rgba(255,255,255,0.12);
+            }
+            input[type="range"]::-webkit-slider-thumb {
+                border-color: #1f2937;
+            }
+            input[type="range"]::-moz-range-thumb {
+                border-color: #1f2937;
+            }
+        }
+
+        /* Sensitivity metric mini-cards */
+        .sens-metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 0.65rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(0,0,0,0.06);
+        }
+        .sens-metric {
+            text-align: center;
+            padding: 0.6rem 0.4rem;
+            border-radius: 8px;
+            background: rgba(37,99,235,0.04);
+        }
+        .sens-metric .sm-val {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--accent);
+        }
+        .sens-metric .sm-val.green { color: #16a34a; }
+        .sens-metric .sm-val.red { color: #dc2626; }
+        .sens-metric .sm-lbl {
+            font-size: 0.62rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-top: 0.15rem;
+        }
+        @media (prefers-color-scheme: dark) {
+            .sens-metrics { border-top-color: rgba(255,255,255,0.08); }
+            .sens-metric { background: rgba(96,165,250,0.08); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <a href="../" class="back-link">&larr; All Calculators</a>
+
+    <section class="page-intro">
+        <div class="subtitle">Build your business case</div>
+        <h1>Project ROI &amp; CapEx Justification</h1>
+        <p>Enter upfront investment, ongoing costs, and expected benefits to get NPV, IRR, payback period, and a one-page justification view you can hand straight to a CFO.</p>
+    </section>
+
+    <div class="calc-form">
+        <div class="form-section-title" style="margin-top:0;border-top:none;padding-top:0;">Project Details</div>
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="projectName">Project Name</label>
+                <input type="text" id="projectName" value="ERP System Upgrade" placeholder="e.g. New CRM Platform">
+            </div>
+            <div class="form-group">
+                <label for="horizon">Time Horizon (years)</label>
+                <div class="label-hint">Projection period for cash flow analysis</div>
+                <input type="number" id="horizon" value="5" min="1" max="30" step="1">
+            </div>
+            <div class="form-group">
+                <label for="discountRate">Discount Rate (%)</label>
+                <div class="label-hint">WACC or required rate of return</div>
+                <input type="number" id="discountRate" value="10" min="0" max="50" step="0.5">
+            </div>
+            <div class="form-group">
+                <label for="upfrontCost">Upfront / CapEx ($)</label>
+                <div class="label-hint">One-time investment in Year 0</div>
+                <input type="number" id="upfrontCost" value="250000" min="0" step="1000">
+            </div>
+        </div>
+
+        <div class="form-section-title">Ongoing Annual Costs</div>
+        <p style="font-size:0.85rem; color:var(--text-secondary); margin-top:-0.25rem; margin-bottom:1rem;">Maintenance, licenses, staffing, support — anything recurring each year.</p>
+        <div id="costList">
+            <div class="cost-row">
+                <div class="form-group">
+                    <label>Cost Item</label>
+                    <input type="text" class="cost-name" value="Annual license & support" placeholder="e.g. Software licenses">
+                </div>
+                <div class="form-group">
+                    <label>Annual Amount ($)</label>
+                    <input type="number" class="cost-amount" value="30000" min="0" step="500">
+                </div>
+                <button class="remove-task" title="Remove" onclick="removeRow(this)">&times;</button>
+            </div>
+        </div>
+        <button class="add-task-btn" onclick="addCostRow()">+ Add Cost Item</button>
+
+        <div class="form-section-title">Expected Annual Benefits</div>
+        <p style="font-size:0.85rem; color:var(--text-secondary); margin-top:-0.25rem; margin-bottom:1rem;">Cost savings, efficiency gains, new revenue, risk avoidance — anything the project delivers.</p>
+        <div id="benefitList">
+            <div class="benefit-row">
+                <div class="form-group">
+                    <label>Benefit</label>
+                    <input type="text" class="benefit-name" value="Labor cost savings" placeholder="e.g. Reduced manual processing">
+                </div>
+                <div class="form-group">
+                    <label>Annual Value ($)</label>
+                    <input type="number" class="benefit-amount" value="95000" min="0" step="500">
+                </div>
+                <button class="remove-task" title="Remove" onclick="removeRow(this)">&times;</button>
+            </div>
+            <div class="benefit-row">
+                <div class="form-group">
+                    <label>Benefit</label>
+                    <input type="text" class="benefit-name" value="Error reduction savings" placeholder="e.g. Reduced rework">
+                </div>
+                <div class="form-group">
+                    <label>Annual Value ($)</label>
+                    <input type="number" class="benefit-amount" value="25000" min="0" step="500">
+                </div>
+                <button class="remove-task" title="Remove" onclick="removeRow(this)">&times;</button>
+            </div>
+        </div>
+        <button class="add-task-btn" onclick="addBenefitRow()">+ Add Benefit Item</button>
+
+        <button class="calc-btn" onclick="calculate()">Calculate &amp; Build Justification</button>
+    </div>
+
+    <!-- Results -->
+    <div class="results" id="results">
+        <div class="download-bar">
+            <button class="download-btn" onclick="downloadResults()">
+                <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Save as Image
+            </button>
+        </div>
+        <div class="input-summary" id="inputSummary"></div>
+        <div class="results-hero" id="heroCard"></div>
+        <div class="stat-row" id="statRow"></div>
+
+        <div class="chart-card">
+            <h3>Cumulative Cash Flow</h3>
+            <div class="chart-wrap"><canvas id="cashFlowChart"></canvas></div>
+        </div>
+
+        <div class="chart-card">
+            <h3>Annual Benefits vs. Costs</h3>
+            <div class="chart-wrap"><canvas id="annualChart"></canvas></div>
+        </div>
+
+        <div class="chart-card">
+            <h3>Year-by-Year Breakdown</h3>
+            <div style="overflow-x:auto;">
+                <table class="breakdown-table" id="breakdownTable"></table>
+            </div>
+        </div>
+
+        <!-- Sensitivity panel (interactive, hidden from export) -->
+        <div class="sensitivity-panel" id="sensitivityPanel">
+            <h3>Stress-Test Your Assumptions</h3>
+
+            <div class="slider-group">
+                <div class="slider-header">
+                    <span class="slider-label">CapEx Adjustment</span>
+                    <span class="slider-value" id="sensCapexVal">0%</span>
+                </div>
+                <input type="range" id="sensCapex" min="-50" max="50" value="0" step="5">
+            </div>
+
+            <div class="slider-group">
+                <div class="slider-header">
+                    <span class="slider-label">Annual Benefits Adjustment</span>
+                    <span class="slider-value" id="sensBenefitVal">0%</span>
+                </div>
+                <input type="range" id="sensBenefit" min="-50" max="50" value="0" step="5">
+            </div>
+
+            <div class="slider-group">
+                <div class="slider-header">
+                    <span class="slider-label">Ongoing Costs Adjustment</span>
+                    <span class="slider-value" id="sensCostVal">0%</span>
+                </div>
+                <input type="range" id="sensCost" min="-50" max="50" value="0" step="5">
+            </div>
+
+            <div class="slider-group">
+                <div class="slider-header">
+                    <span class="slider-label">Discount Rate Override</span>
+                    <span class="slider-value" id="sensDiscountVal">—</span>
+                </div>
+                <input type="range" id="sensDiscount" min="0" max="25" value="10" step="0.5">
+            </div>
+
+            <div class="sens-metrics" id="sensMetrics"></div>
+        </div>
+
+        <div class="chart-card">
+            <h3>NPV Sensitivity to Discount Rate</h3>
+            <div class="chart-wrap"><canvas id="sensitivityChart"></canvas></div>
+        </div>
+    </div>
+
+    <my-footer></my-footer>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const fmt = n => (n < 0 ? '-' : '') + '$' + Math.abs(Math.round(n)).toLocaleString('en-US');
+const pct = n => (n >= 0 ? '+' : '') + n.toFixed(1) + '%';
+const mob = () => window.innerWidth <= 600;
+const cf = s => ({ family: 'Inter', size: mob() ? Math.max(s - 2, 9) : s, weight: 500 });
+
+/* ── Dynamic rows ── */
+function addCostRow() {
+    const row = document.createElement('div');
+    row.className = 'cost-row';
+    row.innerHTML = `
+        <div class="form-group"><label>Cost Item</label>
+            <input type="text" class="cost-name" placeholder="e.g. Cloud hosting"></div>
+        <div class="form-group"><label>Annual Amount ($)</label>
+            <input type="number" class="cost-amount" value="0" min="0" step="500"></div>
+        <button class="remove-task" title="Remove" onclick="removeRow(this)">&times;</button>`;
+    $('costList').appendChild(row);
+}
+function addBenefitRow() {
+    const row = document.createElement('div');
+    row.className = 'benefit-row';
+    row.innerHTML = `
+        <div class="form-group"><label>Benefit</label>
+            <input type="text" class="benefit-name" placeholder="e.g. Revenue uplift"></div>
+        <div class="form-group"><label>Annual Value ($)</label>
+            <input type="number" class="benefit-amount" value="0" min="0" step="500"></div>
+        <button class="remove-task" title="Remove" onclick="removeRow(this)">&times;</button>`;
+    $('benefitList').appendChild(row);
+}
+function removeRow(btn) {
+    const parent = btn.closest('.cost-row, .benefit-row');
+    const siblings = parent.parentElement.querySelectorAll('.cost-row, .benefit-row');
+    if (siblings.length > 1) parent.remove();
+}
+
+/* ── Financial math ── */
+function calcNPV(rate, cashFlows) {
+    return cashFlows.reduce((npv, cf, t) => npv + cf / Math.pow(1 + rate, t), 0);
+}
+
+function calcIRR(cashFlows, guess = 0.1) {
+    // Newton-Raphson
+    let rate = guess;
+    for (let i = 0; i < 200; i++) {
+        let npv = 0, dnpv = 0;
+        for (let t = 0; t < cashFlows.length; t++) {
+            const d = Math.pow(1 + rate, t);
+            npv += cashFlows[t] / d;
+            if (t > 0) dnpv -= t * cashFlows[t] / Math.pow(1 + rate, t + 1);
+        }
+        if (Math.abs(dnpv) < 1e-12) break;
+        const next = rate - npv / dnpv;
+        if (Math.abs(next - rate) < 1e-9) return next;
+        rate = next;
+        if (rate < -0.99 || rate > 10) return NaN;
+    }
+    return rate;
+}
+
+function calcPayback(cashFlows) {
+    let cum = 0;
+    for (let t = 0; t < cashFlows.length; t++) {
+        cum += cashFlows[t];
+        if (cum >= 0 && t > 0) {
+            const prev = cum - cashFlows[t];
+            const frac = cashFlows[t] !== 0 ? -prev / cashFlows[t] : 0;
+            return t - 1 + frac;
+        }
+    }
+    return null;
+}
+
+function calcDiscountedPayback(cashFlows, rate) {
+    let cum = 0;
+    for (let t = 0; t < cashFlows.length; t++) {
+        const dcf = cashFlows[t] / Math.pow(1 + rate, t);
+        cum += dcf;
+        if (cum >= 0 && t > 0) {
+            const prev = cum - dcf;
+            const frac = dcf !== 0 ? -prev / dcf : 0;
+            return t - 1 + frac;
+        }
+    }
+    return null;
+}
+
+/* ── Gather inputs ── */
+function gatherInputs() {
+    const projectName = $('projectName').value || 'Untitled Project';
+    const horizon = Math.max(1, parseInt($('horizon').value) || 5);
+    const discountRate = (parseFloat($('discountRate').value) || 10) / 100;
+    const upfront = parseFloat($('upfrontCost').value) || 0;
+
+    const costs = [];
+    document.querySelectorAll('.cost-row').forEach(row => {
+        const name = row.querySelector('.cost-name').value || 'Cost item';
+        const amount = parseFloat(row.querySelector('.cost-amount').value) || 0;
+        costs.push({ name, amount });
+    });
+
+    const benefits = [];
+    document.querySelectorAll('.benefit-row').forEach(row => {
+        const name = row.querySelector('.benefit-name').value || 'Benefit item';
+        const amount = parseFloat(row.querySelector('.benefit-amount').value) || 0;
+        benefits.push({ name, amount });
+    });
+
+    const annualCosts = costs.reduce((s, c) => s + c.amount, 0);
+    const annualBenefits = benefits.reduce((s, b) => s + b.amount, 0);
+
+    return { projectName, horizon, discountRate, upfront, costs, benefits, annualCosts, annualBenefits };
+}
+
+/* ── Build cash flows with optional adjustments ── */
+function buildCashFlows(inp, adj = {}) {
+    const capexMult = 1 + (adj.capex || 0) / 100;
+    const benefitMult = 1 + (adj.benefit || 0) / 100;
+    const costMult = 1 + (adj.cost || 0) / 100;
+    const dr = adj.discount !== undefined ? adj.discount / 100 : inp.discountRate;
+
+    const upfront = inp.upfront * capexMult;
+    const annB = inp.annualBenefits * benefitMult;
+    const annC = inp.annualCosts * costMult;
+    const netAnnual = annB - annC;
+
+    const cfs = [-upfront];
+    for (let y = 1; y <= inp.horizon; y++) cfs.push(netAnnual);
+
+    return { cfs, dr, upfront, annB, annC, netAnnual };
+}
+
+/* ── Chart instances ── */
+let cashFlowInst = null, annualInst = null, sensChartInst = null;
+let lastInputs = null;
+
+/* ── Main calculate ── */
+function calculate() {
+    lastInputs = gatherInputs();
+    const inp = lastInputs;
+    const { cfs, dr, upfront, annB, annC, netAnnual } = buildCashFlows(inp);
+
+    const npv = calcNPV(dr, cfs);
+    const irr = calcIRR(cfs);
+    const simplePayback = calcPayback(cfs);
+    const discPayback = calcDiscountedPayback(cfs, dr);
+    const totalBenefits = annB * inp.horizon;
+    const totalCosts = upfront + annC * inp.horizon;
+    const roiPct = totalCosts > 0 ? ((totalBenefits - totalCosts) / totalCosts * 100) : 0;
+    const isPositive = npv >= 0;
+
+    // Input summary for export
+    const costItems = inp.costs.map(c => c.name + ': ' + fmt(c.amount) + '/yr').join(', ');
+    const benefitItems = inp.benefits.map(b => b.name + ': ' + fmt(b.amount) + '/yr').join(', ');
+    $('inputSummary').innerHTML = `<h4>${inp.projectName} — Input Assumptions</h4><div class="summary-grid">
+        <div class="summary-item"><span class="s-label">Upfront CapEx</span><span class="s-value">${fmt(upfront)}</span></div>
+        <div class="summary-item"><span class="s-label">Time Horizon</span><span class="s-value">${inp.horizon} years</span></div>
+        <div class="summary-item"><span class="s-label">Discount Rate</span><span class="s-value">${(dr*100).toFixed(1)}%</span></div>
+        <div class="summary-item"><span class="s-label">Annual Costs</span><span class="s-value">${costItems}</span></div>
+        <div class="summary-item"><span class="s-label">Annual Benefits</span><span class="s-value">${benefitItems}</span></div>
+    </div>`;
+
+    // Hero
+    $('heroCard').className = 'results-hero ' + (isPositive ? 'positive' : 'negative');
+    $('heroCard').innerHTML = `
+        <div class="hero-label">Net Present Value (${inp.horizon}-Year)</div>
+        <div class="hero-value">${fmt(npv)}</div>
+        <div class="hero-sub">${!isNaN(irr) ? (irr * 100).toFixed(1) + '% IRR' : 'IRR N/A'} &bull; ${simplePayback !== null ? simplePayback.toFixed(1) + '-year payback' : 'No payback in period'}</div>`;
+
+    // Stat cards
+    const irrStr = !isNaN(irr) ? (irr * 100).toFixed(1) + '%' : 'N/A';
+    const spStr = simplePayback !== null ? simplePayback.toFixed(1) + ' yrs' : '>' + inp.horizon + ' yrs';
+    const dpStr = discPayback !== null ? discPayback.toFixed(1) + ' yrs' : '>' + inp.horizon + ' yrs';
+    $('statRow').innerHTML = `
+        <div class="stat-card"><div class="val ${npv >= 0 ? 'green' : 'red'}">${fmt(npv)}</div><div class="lbl">NPV</div></div>
+        <div class="stat-card"><div class="val ${!isNaN(irr) && irr >= dr ? 'green' : ''}">${irrStr}</div><div class="lbl">IRR</div></div>
+        <div class="stat-card"><div class="val">${spStr}</div><div class="lbl">Simple Payback</div></div>
+        <div class="stat-card"><div class="val">${dpStr}</div><div class="lbl">Discounted Payback</div></div>
+        <div class="stat-card"><div class="val ${roiPct >= 0 ? 'green' : 'red'}">${roiPct.toFixed(0)}%</div><div class="lbl">${inp.horizon}-Year ROI</div></div>
+        <div class="stat-card"><div class="val">${fmt(netAnnual)}</div><div class="lbl">Net Annual Cash Flow</div></div>`;
+
+    // Charts
+    const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const gridClr = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
+    const txtClr = isDark ? '#d1d5db' : '#6b7280';
+    const mobile = mob();
+
+    // 1. Cumulative cash flow chart
+    const labels = [];
+    const cumUndiscounted = [];
+    const cumDiscounted = [];
+    let cumU = 0, cumD = 0;
+    for (let t = 0; t <= inp.horizon; t++) {
+        labels.push(t === 0 ? 'Year 0' : (mobile ? 'Yr ' + t : 'Year ' + t));
+        cumU += cfs[t];
+        cumD += cfs[t] / Math.pow(1 + dr, t);
+        cumUndiscounted.push(Math.round(cumU));
+        cumDiscounted.push(Math.round(cumD));
+    }
+
+    if (cashFlowInst) cashFlowInst.destroy();
+    cashFlowInst = new Chart($('cashFlowChart'), {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [
+                {
+                    label: 'Cumulative (Undiscounted)', data: cumUndiscounted,
+                    borderColor: '#2563eb', backgroundColor: 'rgba(37,99,235,0.06)',
+                    fill: true, tension: 0.25, pointRadius: mobile ? 3 : 4, pointBackgroundColor: '#2563eb', borderWidth: 2.5
+                },
+                {
+                    label: 'Cumulative (Discounted)', data: cumDiscounted,
+                    borderColor: '#16a34a', backgroundColor: 'rgba(22,163,74,0.06)',
+                    fill: true, tension: 0.25, pointRadius: mobile ? 3 : 4, pointBackgroundColor: '#16a34a', borderWidth: 2
+                },
+                {
+                    label: 'Break-Even', data: new Array(inp.horizon + 1).fill(0),
+                    borderColor: '#94a3b8', borderDash: [6, 4], pointRadius: 0, borderWidth: 1.5, fill: false
+                }
+            ]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: true,
+            aspectRatio: mobile ? 1.3 : 2,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: { position: mobile ? 'bottom' : 'top', labels: { color: txtClr, font: cf(11), boxWidth: 12, padding: 12 } },
+                tooltip: { callbacks: { label: c => c.dataset.label + ': ' + fmt(c.raw) } }
+            },
+            scales: {
+                x: { ticks: { color: txtClr, font: cf(10), maxRotation: mobile ? 45 : 0 }, grid: { color: gridClr } },
+                y: { ticks: { color: txtClr, font: cf(10), callback: v => '$' + (v / 1000).toFixed(0) + 'k', maxTicksLimit: mobile ? 5 : 8 }, grid: { color: gridClr } }
+            }
+        }
+    });
+
+    // 2. Annual benefits vs costs bar
+    const annLabels = [];
+    const benefitsData = [];
+    const costsData = [];
+    for (let t = 0; t <= inp.horizon; t++) {
+        annLabels.push(t === 0 ? 'Year 0' : (mobile ? 'Yr ' + t : 'Year ' + t));
+        benefitsData.push(t === 0 ? 0 : Math.round(annB));
+        costsData.push(t === 0 ? Math.round(upfront) : Math.round(annC));
+    }
+
+    if (annualInst) annualInst.destroy();
+    annualInst = new Chart($('annualChart'), {
+        type: 'bar',
+        data: {
+            labels: annLabels,
+            datasets: [
+                { label: 'Benefits', data: benefitsData, backgroundColor: '#16a34a', borderRadius: 4 },
+                { label: 'Costs', data: costsData, backgroundColor: '#dc2626', borderRadius: 4 }
+            ]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: true,
+            aspectRatio: mobile ? 1.3 : 2.2,
+            plugins: {
+                legend: { position: mobile ? 'bottom' : 'top', labels: { color: txtClr, font: cf(11), boxWidth: 12, padding: 12 } },
+                tooltip: { callbacks: { label: c => c.dataset.label + ': ' + fmt(c.raw) } }
+            },
+            scales: {
+                x: { ticks: { color: txtClr, font: cf(10), maxRotation: mobile ? 45 : 0 }, grid: { display: false } },
+                y: { ticks: { color: txtClr, font: cf(10), callback: v => '$' + (v / 1000).toFixed(0) + 'k', maxTicksLimit: 5 }, grid: { color: gridClr }, beginAtZero: true }
+            }
+        }
+    });
+
+    // 3. Breakdown table
+    let tableHTML = `<thead><tr><th>Year</th><th>Benefits</th><th>Costs</th><th>Net Cash Flow</th><th>Discounted CF</th><th>Cumulative DCF</th></tr></thead><tbody>`;
+    let cumDCF = 0;
+    let paybackHit = false;
+    for (let t = 0; t <= inp.horizon; t++) {
+        const b = t === 0 ? 0 : annB;
+        const c = t === 0 ? upfront : annC;
+        const net = b - c;
+        const dcf = net / Math.pow(1 + dr, t);
+        cumDCF += dcf;
+        const isBE = !paybackHit && cumDCF >= 0 && t > 0;
+        if (isBE) paybackHit = true;
+        const cls = isBE ? ' class="break-even-row"' : '';
+        const netColor = net >= 0 ? 'color:#16a34a' : 'color:#dc2626';
+        const cumColor = cumDCF >= 0 ? 'color:#16a34a' : 'color:#dc2626';
+        tableHTML += `<tr${cls}>
+            <td>${t === 0 ? 'Year 0 (CapEx)' : 'Year ' + t}</td>
+            <td>${fmt(b)}</td>
+            <td>${fmt(c)}</td>
+            <td style="${netColor};font-weight:600">${fmt(net)}</td>
+            <td>${fmt(Math.round(dcf))}</td>
+            <td style="${cumColor};font-weight:600">${fmt(Math.round(cumDCF))}</td>
+        </tr>`;
+    }
+    tableHTML += '</tbody>';
+    $('breakdownTable').innerHTML = tableHTML;
+
+    // 4. NPV sensitivity to discount rate chart
+    const sensRates = [];
+    const sensNPVs = [];
+    for (let r = 0; r <= 25; r += 1) {
+        sensRates.push(r + '%');
+        sensNPVs.push(Math.round(calcNPV(r / 100, cfs)));
+    }
+    if (sensChartInst) sensChartInst.destroy();
+    sensChartInst = new Chart($('sensitivityChart'), {
+        type: 'bar',
+        data: {
+            labels: sensRates,
+            datasets: [{
+                label: 'NPV',
+                data: sensNPVs,
+                backgroundColor: sensNPVs.map(v => v >= 0 ? '#16a34a' : '#dc2626'),
+                borderRadius: 3
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: true,
+            aspectRatio: mobile ? 1.3 : 2.5,
+            plugins: {
+                legend: { display: false },
+                tooltip: { callbacks: { label: c => 'NPV at ' + c.label + ': ' + fmt(c.raw) } }
+            },
+            scales: {
+                x: { ticks: { color: txtClr, font: cf(9), maxRotation: mobile ? 45 : 0 }, grid: { display: false } },
+                y: { ticks: { color: txtClr, font: cf(10), callback: v => '$' + (v / 1000).toFixed(0) + 'k', maxTicksLimit: 5 }, grid: { color: gridClr } }
+            }
+        }
+    });
+
+    // Set sensitivity slider defaults
+    $('sensCapex').value = 0;
+    $('sensBenefit').value = 0;
+    $('sensCost').value = 0;
+    $('sensDiscount').value = (dr * 100).toFixed(1);
+    updateSensLabels();
+    updateSensMetrics();
+
+    $('results').classList.add('visible');
+    $('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/* ── Sensitivity sliders ── */
+function updateSensLabels() {
+    const capex = parseInt($('sensCapex').value);
+    const benefit = parseInt($('sensBenefit').value);
+    const cost = parseInt($('sensCost').value);
+    const discount = parseFloat($('sensDiscount').value);
+    $('sensCapexVal').textContent = (capex >= 0 ? '+' : '') + capex + '%';
+    $('sensBenefitVal').textContent = (benefit >= 0 ? '+' : '') + benefit + '%';
+    $('sensCostVal').textContent = (cost >= 0 ? '+' : '') + cost + '%';
+    $('sensDiscountVal').textContent = discount.toFixed(1) + '%';
+}
+
+function updateSensMetrics() {
+    if (!lastInputs) return;
+    const adj = {
+        capex: parseInt($('sensCapex').value),
+        benefit: parseInt($('sensBenefit').value),
+        cost: parseInt($('sensCost').value),
+        discount: parseFloat($('sensDiscount').value)
+    };
+    const { cfs, dr } = buildCashFlows(lastInputs, adj);
+    const npv = calcNPV(dr, cfs);
+    const irr = calcIRR(cfs);
+    const sp = calcPayback(cfs);
+    const dp = calcDiscountedPayback(cfs, dr);
+
+    const irrStr = !isNaN(irr) ? (irr * 100).toFixed(1) + '%' : 'N/A';
+    const spStr = sp !== null ? sp.toFixed(1) + ' yrs' : '>' + lastInputs.horizon + ' yrs';
+    const dpStr = dp !== null ? dp.toFixed(1) + ' yrs' : '>' + lastInputs.horizon + ' yrs';
+
+    $('sensMetrics').innerHTML = `
+        <div class="sens-metric"><div class="sm-val ${npv >= 0 ? 'green' : 'red'}">${fmt(npv)}</div><div class="sm-lbl">NPV</div></div>
+        <div class="sens-metric"><div class="sm-val">${irrStr}</div><div class="sm-lbl">IRR</div></div>
+        <div class="sens-metric"><div class="sm-val">${spStr}</div><div class="sm-lbl">Simple Payback</div></div>
+        <div class="sens-metric"><div class="sm-val">${dpStr}</div><div class="sm-lbl">Disc. Payback</div></div>`;
+}
+
+['sensCapex', 'sensBenefit', 'sensCost', 'sensDiscount'].forEach(id => {
+    $(id).addEventListener('input', () => { updateSensLabels(); updateSensMetrics(); });
+});
+
+document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') calculate(); });
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script>
+function downloadResults() {
+    const el = document.getElementById('results');
+    const btn = document.querySelector('.download-btn');
+    btn.textContent = 'Capturing\u2026';
+    btn.disabled = true;
+
+    const lightTxt = '#6b7280', lightGrid = 'rgba(0,0,0,0.06)';
+    const savedCharts = [];
+    Object.values(Chart.instances).forEach(chart => {
+        const snap = {};
+        Object.entries(chart.options.scales || {}).forEach(([k, sc]) => {
+            snap[k] = { tick: sc.ticks?.color, grid: sc.grid?.color };
+            if (sc.ticks) sc.ticks.color = lightTxt;
+            if (sc.grid)  sc.grid.color  = lightGrid;
+        });
+        const leg = chart.options.plugins?.legend?.labels;
+        if (leg) { snap._leg = leg.color; leg.color = lightTxt; }
+        savedCharts.push({ chart, snap });
+        chart.update('none');
+    });
+
+    html2canvas(el, {
+        backgroundColor: '#ffffff',
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        onclone: (clonedDoc) => {
+            const clone = clonedDoc.getElementById('results');
+            clone.style.animation = 'none';
+            clone.style.transition = 'none';
+            clone.style.opacity = '1';
+            clone.style.transform = 'none';
+
+            const hero = clone.querySelector('.results-hero, .hero-card, .cashflow-hero');
+            if (hero) {
+                hero.style.boxShadow = 'none';
+                if (hero.classList.contains('positive')) {
+                    hero.style.background = '#16a34a';
+                } else if (hero.classList.contains('negative') || hero.classList.contains('red')) {
+                    hero.style.background = '#dc2626';
+                } else {
+                    hero.style.background = '#2563eb';
+                }
+                hero.style.color = '#ffffff';
+            }
+
+            clone.style.color = '#111827';
+            clone.querySelectorAll('.stat-card, .chart-card').forEach(card => {
+                card.style.background = '#ffffff';
+                card.style.borderColor = '#e5e7eb';
+                card.style.opacity = '1';
+            });
+
+            // Hide UI-only elements from export
+            const dlBar = clone.querySelector('.download-bar');
+            if (dlBar) dlBar.style.display = 'none';
+            const sensPanel = clone.querySelector('.sensitivity-panel');
+            if (sensPanel) sensPanel.style.display = 'none';
+
+            // Show input summary in export
+            const summary = clone.querySelector('.input-summary');
+            if (summary) summary.style.display = 'block';
+        }
+    })
+    .then(canvas => {
+        const a = document.createElement('a');
+        a.download = document.title.split('|')[0].trim().replace(/\s+/g, '-').toLowerCase() + '-results.png';
+        a.href = canvas.toDataURL('image/png');
+        a.click();
+    })
+    .finally(() => {
+        savedCharts.forEach(({ chart, snap }) => {
+            Object.entries(chart.options.scales || {}).forEach(([k, sc]) => {
+                if (snap[k]) {
+                    if (sc.ticks) sc.ticks.color = snap[k].tick;
+                    if (sc.grid)  sc.grid.color  = snap[k].grid;
+                }
+            });
+            const leg = chart.options.plugins?.legend?.labels;
+            if (leg && snap._leg !== undefined) leg.color = snap._leg;
+            chart.update('none');
+        });
+        btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Save as Image';
+        btn.disabled = false;
+    });
+}
+</script>
+
+</body>
+</html>

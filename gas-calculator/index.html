@@ -85,6 +85,7 @@
             </button>
         </div>
 
+        <div class="input-summary" id="inputSummary"></div>
         <div class="results-summary" id="summaryCards"></div>
 
         <div class="chart-card">
@@ -194,6 +195,17 @@ function calculate() {
     if (annualSavings > 0 && totalUpgradeCost > 0) {
         breakEvenMonths = Math.ceil((totalUpgradeCost / annualSavings) * 12);
     }
+
+    // Input summary for export
+    let inputHTML = `<h4>Your Inputs</h4><div class="summary-grid">
+        <div class="summary-item"><span class="s-label">Current Car MPG</span><span class="s-value">${currentMpg}</span></div>
+        <div class="summary-item"><span class="s-label">New Car MPG</span><span class="s-value">${newMpg}</span></div>
+        <div class="summary-item"><span class="s-label">Miles / Year</span><span class="s-value">${miles.toLocaleString()}</span></div>
+        <div class="summary-item"><span class="s-label">Gas Price</span><span class="s-value">$${gas.toFixed(2)}/gal</span></div>
+        <div class="summary-item"><span class="s-label">Price Difference</span><span class="s-value">${fmt(priceDiff)}</span></div>
+        <div class="summary-item"><span class="s-label">Purchase Type</span><span class="s-value">${isFinance ? 'Finance ('+apr*100+'% APR, '+loanMonths+'mo)' : 'Cash'}</span></div>
+    </div>`;
+    $('inputSummary').innerHTML = inputHTML;
 
     // --- Render summary cards ---
     let cardsHTML = `
@@ -348,10 +360,9 @@ function downloadResults() {
     const btn = document.querySelector('.download-btn');
     btn.textContent = 'Capturing…';
     btn.disabled = true;
-    el.classList.add('capturing');
 
     const lightTxt = '#6b7280', lightGrid = 'rgba(0,0,0,0.06)';
-    const saved = [];
+    const savedCharts = [];
     Object.values(Chart.instances).forEach(chart => {
         const snap = {};
         Object.entries(chart.options.scales || {}).forEach(([k, sc]) => {
@@ -361,33 +372,71 @@ function downloadResults() {
         });
         const leg = chart.options.plugins?.legend?.labels;
         if (leg) { snap._leg = leg.color; leg.color = lightTxt; }
-        saved.push({ chart, snap });
+        savedCharts.push({ chart, snap });
         chart.update('none');
     });
 
-    html2canvas(el, { backgroundColor: '#ffffff', scale: 2, useCORS: true })
-        .then(canvas => {
-            const a = document.createElement('a');
-            a.download = document.title.split('|')[0].trim().replace(/\s+/g, '-').toLowerCase() + '-results.png';
-            a.href = canvas.toDataURL('image/png');
-            a.click();
-        })
-        .finally(() => {
-            saved.forEach(({ chart, snap }) => {
-                Object.entries(chart.options.scales || {}).forEach(([k, sc]) => {
-                    if (snap[k]) {
-                        if (sc.ticks) sc.ticks.color = snap[k].tick;
-                        if (sc.grid)  sc.grid.color  = snap[k].grid;
-                    }
-                });
-                const leg = chart.options.plugins?.legend?.labels;
-                if (leg && snap._leg !== undefined) leg.color = snap._leg;
-                chart.update('none');
+    html2canvas(el, {
+        backgroundColor: '#ffffff',
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        onclone: (clonedDoc) => {
+            const clone = clonedDoc.getElementById('results');
+            clone.style.animation = 'none';
+            clone.style.transition = 'none';
+            clone.style.opacity = '1';
+            clone.style.transform = 'none';
+
+            const hero = clone.querySelector('.results-hero, .hero-card, .cashflow-hero');
+            if (hero) {
+                hero.style.boxShadow = 'none';
+                if (hero.classList.contains('positive')) {
+                    hero.style.background = '#16a34a';
+                } else if (hero.classList.contains('negative') || hero.classList.contains('red')) {
+                    hero.style.background = '#dc2626';
+                } else {
+                    hero.style.background = '#2563eb';
+                }
+                hero.style.color = '#ffffff';
+            }
+
+            clone.style.color = '#111827';
+            clone.querySelectorAll('.stat-card, .chart-card').forEach(card => {
+                card.style.background = '#ffffff';
+                card.style.borderColor = '#e5e7eb';
+                card.style.opacity = '1';
             });
-            el.classList.remove('capturing');
-            btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Save as Image';
-            btn.disabled = false;
+
+            // Gas calc uses inline flex header instead of .download-bar
+            const dlBtn = clone.querySelector('.download-btn');
+            if (dlBtn) dlBtn.style.display = 'none';
+
+            const summary = clone.querySelector('.input-summary');
+            if (summary) summary.style.display = 'block';
+        }
+    })
+    .then(canvas => {
+        const a = document.createElement('a');
+        a.download = document.title.split('|')[0].trim().replace(/\s+/g, '-').toLowerCase() + '-results.png';
+        a.href = canvas.toDataURL('image/png');
+        a.click();
+    })
+    .finally(() => {
+        savedCharts.forEach(({ chart, snap }) => {
+            Object.entries(chart.options.scales || {}).forEach(([k, sc]) => {
+                if (snap[k]) {
+                    if (sc.ticks) sc.ticks.color = snap[k].tick;
+                    if (sc.grid)  sc.grid.color  = snap[k].grid;
+                }
+            });
+            const leg = chart.options.plugins?.legend?.labels;
+            if (leg && snap._leg !== undefined) leg.color = snap._leg;
+            chart.update('none');
         });
+        btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Save as Image';
+        btn.disabled = false;
+    });
 }
 </script>
 
