@@ -56,6 +56,12 @@
     </div>
 
     <div class="results" id="results">
+        <div class="download-bar">
+            <button class="download-btn" onclick="downloadResults()">
+                <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Save as Image
+            </button>
+        </div>
         <div class="hero-card" id="heroCard"></div>
         <div class="stat-row" id="statRow"></div>
 
@@ -170,6 +176,55 @@ function calculate(){
     $('results').scrollIntoView({behavior:'smooth',block:'start'});
 }
 document.addEventListener('keydown',e=>{if(e.key==='Enter')calculate();});
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script>
+function downloadResults() {
+    const el = document.getElementById('results');
+    const btn = document.querySelector('.download-btn');
+    btn.textContent = 'Capturing…';
+    btn.disabled = true;
+    el.classList.add('capturing');
+
+    const lightTxt = '#6b7280', lightGrid = 'rgba(0,0,0,0.06)';
+    const saved = [];
+    Object.values(Chart.instances).forEach(chart => {
+        const snap = {};
+        Object.entries(chart.options.scales || {}).forEach(([k, sc]) => {
+            snap[k] = { tick: sc.ticks?.color, grid: sc.grid?.color };
+            if (sc.ticks) sc.ticks.color = lightTxt;
+            if (sc.grid)  sc.grid.color  = lightGrid;
+        });
+        const leg = chart.options.plugins?.legend?.labels;
+        if (leg) { snap._leg = leg.color; leg.color = lightTxt; }
+        saved.push({ chart, snap });
+        chart.update('none');
+    });
+
+    html2canvas(el, { backgroundColor: '#ffffff', scale: 2, useCORS: true })
+        .then(canvas => {
+            const a = document.createElement('a');
+            a.download = document.title.split('|')[0].trim().replace(/\s+/g, '-').toLowerCase() + '-results.png';
+            a.href = canvas.toDataURL('image/png');
+            a.click();
+        })
+        .finally(() => {
+            saved.forEach(({ chart, snap }) => {
+                Object.entries(chart.options.scales || {}).forEach(([k, sc]) => {
+                    if (snap[k]) {
+                        if (sc.ticks) sc.ticks.color = snap[k].tick;
+                        if (sc.grid)  sc.grid.color  = snap[k].grid;
+                    }
+                });
+                const leg = chart.options.plugins?.legend?.labels;
+                if (leg && snap._leg !== undefined) leg.color = snap._leg;
+                chart.update('none');
+            });
+            el.classList.remove('capturing');
+            btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Save as Image';
+            btn.disabled = false;
+        });
+}
 </script>
 </body>
 </html>
