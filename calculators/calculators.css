@@ -488,6 +488,42 @@ body.standalone .page-intro h1 {
     font-weight: 600;
 }
 
+/* ── Input Summary (shown only in exported image) ── */
+.input-summary {
+    display: none;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.75rem;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.25rem;
+}
+.input-summary h4 {
+    margin: 0 0 0.5rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+.input-summary .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 0.3rem 1.5rem;
+}
+.input-summary .summary-item {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.82rem;
+    padding: 0.15rem 0;
+}
+.input-summary .summary-item .s-label {
+    color: #64748b;
+}
+.input-summary .summary-item .s-value {
+    font-weight: 600;
+    color: #1e293b;
+}
+
 /* ── Finance toggle (gas calc) ── */
 .finance-fields { display: none; }
 .finance-fields.visible { display: contents; }

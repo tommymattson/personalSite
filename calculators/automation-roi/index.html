@@ -119,6 +119,7 @@
                 Save as Image
             </button>
         </div>
+        <div class="input-summary" id="inputSummary"></div>
         <div class="results-hero" id="heroCard"></div>
         <div class="stat-row" id="statRow"></div>
 
@@ -128,7 +129,7 @@
         </div>
 
         <div class="chart-card">
-            <h3>Monthly Net Savings</h3>
+            <h3>Cumulative Net Cash Flow (Net Position)</h3>
             <div class="chart-wrap"><canvas id="monthlyChart"></canvas></div>
         </div>
 
@@ -209,12 +210,10 @@ function calculate() {
     const automationPct = (parseFloat($('automationPct').value) || 85) / 100;
     const projYears = parseInt($('projYears').value) || 3;
 
-    // Fully loaded hourly rate
     const totalAnnualComp = salary * burden;
     const totalAnnualHours = workWeeks * hoursPerWeek;
     const hourlyRate = totalAnnualComp / totalAnnualHours;
 
-    // Gather tasks
     const taskRows = document.querySelectorAll('.task-row');
     const tasks = [];
     let totalWeeklyHours = 0;
@@ -224,11 +223,10 @@ function calculate() {
         const hours = parseFloat(row.querySelector('.task-hours').value) || 0;
         const freq = row.querySelector('.task-freq').value;
 
-        // Convert everything to weekly hours
         let weeklyHrs;
         if (freq === 'day') weeklyHrs = hours * 5;
         else if (freq === 'week') weeklyHrs = hours;
-        else weeklyHrs = hours / 4.33; // monthly
+        else weeklyHrs = hours / 4.33;
 
         const annualHrs = weeklyHrs * workWeeks;
         const savedHrs = annualHrs * automationPct;
@@ -243,29 +241,27 @@ function calculate() {
     const totalSavedCostYear = totalSavedHoursYear * hourlyRate;
     const monthlyGrossSavings = totalSavedCostYear / 12;
 
-    // Investment
     const annualOngoing = ongoingMonthly * 12;
     const totalMonths = projYears * 12;
 
-    // Break-even calculation (month by month)
     let breakEvenMonth = null;
     const cumSavings = [];
     const cumCosts = [];
-    const monthlyNet = [];
     const labels = [];
+    const netPosition = []; // For the bar chart
 
     for (let m = 1; m <= totalMonths; m++) {
         const savings = monthlyGrossSavings * m;
         const cost = upfront + (ongoingMonthly * m);
+        
         cumSavings.push(Math.round(savings));
         cumCosts.push(Math.round(cost));
-        monthlyNet.push(Math.round(monthlyGrossSavings - ongoingMonthly));
+        netPosition.push(Math.round(savings - cost));
 
         if (breakEvenMonth === null && savings >= cost) {
             breakEvenMonth = m;
         }
 
-        // Label every 3 months on mobile, every month otherwise (cap at every 3 for long projections)
         const showLabel = projYears <= 2 ? (isMobile() ? m % 3 === 0 : true) : m % 3 === 0;
         labels.push(showLabel ? 'M' + m : '');
     }
@@ -275,6 +271,22 @@ function calculate() {
     const netROI = totalSavingsProj - totalInvestment;
     const roiPct = totalInvestment > 0 ? ((netROI / totalInvestment) * 100).toFixed(0) : '∞';
     const isPositive = netROI >= 0;
+
+    // Input summary for export
+    const taskSummary = tasks.map(t => {
+        const fl = {day:'/day',week:'/wk',month:'/mo'}[t.freq];
+        return t.name + ' (' + t.inputHours + 'h' + fl + ')';
+    }).join(', ');
+    $('inputSummary').innerHTML = `<h4>Your Inputs</h4><div class="summary-grid">
+        <div class="summary-item"><span class="s-label">Annual Salary</span><span class="s-value">${fmt(salary)}</span></div>
+        <div class="summary-item"><span class="s-label">Burden Multiplier</span><span class="s-value">${burden}x</span></div>
+        <div class="summary-item"><span class="s-label">Work Schedule</span><span class="s-value">${hoursPerWeek}h/wk × ${workWeeks} wks</span></div>
+        <div class="summary-item"><span class="s-label">Upfront Cost</span><span class="s-value">${fmt(upfront)}</span></div>
+        <div class="summary-item"><span class="s-label">Monthly Ongoing</span><span class="s-value">${fmt(ongoingMonthly)}</span></div>
+        <div class="summary-item"><span class="s-label">Automation Efficiency</span><span class="s-value">${(automationPct*100).toFixed(0)}%</span></div>
+        <div class="summary-item"><span class="s-label">Projection Period</span><span class="s-value">${projYears} years</span></div>
+        <div class="summary-item"><span class="s-label">Tasks</span><span class="s-value">${taskSummary}</span></div>
+    </div>`;
 
     // ── Hero ──
     $('heroCard').className = 'results-hero ' + (isPositive ? 'positive' : 'negative');
@@ -335,17 +347,16 @@ function calculate() {
         }
     });
 
-    // 2. Monthly net savings bar
+    // 2. Cumulative Net Position (Bar Chart)
     if (monthlyInst) monthlyInst.destroy();
-    const monthlyNetVal = monthlyGrossSavings - ongoingMonthly;
-    const barLabels = labels.map((l, i) => l || '');
     monthlyInst = new Chart($('monthlyChart'), {
         type: 'bar',
         data: {
-            labels: barLabels,
+            labels: labels, // Fixed variable name here
             datasets: [{
-                label: 'Net Monthly Savings', data: monthlyNet,
-                backgroundColor: monthlyNetVal >= 0 ? '#16a34a' : '#dc2626',
+                label: 'Net Position',
+                data: netPosition,
+                backgroundColor: netPosition.map(v => v >= 0 ? '#16a34a' : '#dc2626'),
                 borderRadius: 3
             }]
         },
@@ -354,11 +365,20 @@ function calculate() {
             aspectRatio: mobile ? 1.3 : 2.5,
             plugins: {
                 legend: { display: false },
-                tooltip: { callbacks: { label: c => fmt(c.raw) + '/mo' } }
+                tooltip: { callbacks: { label: c => 'Net Position: ' + fmt(c.raw) } }
             },
             scales: {
                 x: { ticks: { color: txtClr, font: chartFont(9), maxRotation: 0 }, grid: { display: false } },
-                y: { ticks: { color: txtClr, font: chartFont(10), callback: v => '$' + v.toLocaleString(), maxTicksLimit: 5 }, grid: { color: gridClr }, beginAtZero: true }
+                y: { 
+                    ticks: { 
+                        color: txtClr, 
+                        font: chartFont(10), 
+                        callback: v => (v < 0 ? '-$' : '$') + Math.abs(v).toLocaleString(),
+                        maxTicksLimit: 5 
+                    }, 
+                    grid: { color: gridClr },
+                    beginAtZero: false 
+                }
             }
         }
     });
@@ -385,7 +405,6 @@ function calculate() {
 
     // 4. Time reclaimed donut
     if (timeInst) timeInst.destroy();
-    const pctReclaimed = Math.min((weeklySavedHrs / hoursPerWeek) * 100, 100);
     timeInst = new Chart($('timeChart'), {
         type: 'doughnut',
         data: {
@@ -418,13 +437,13 @@ document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.ta
 function downloadResults() {
     const el = document.getElementById('results');
     const btn = document.querySelector('.download-btn');
+    
     btn.textContent = 'Capturing…';
     btn.disabled = true;
-    el.classList.add('capturing');
 
-    /* Force every Chart.js chart to light-mode colours */
+    // 1. Chart Color Overrides (internal canvas state)
     const lightTxt = '#6b7280', lightGrid = 'rgba(0,0,0,0.06)';
-    const saved = [];
+    const savedCharts = [];
     Object.values(Chart.instances).forEach(chart => {
         const snap = {};
         Object.entries(chart.options.scales || {}).forEach(([k, sc]) => {
@@ -434,34 +453,80 @@ function downloadResults() {
         });
         const leg = chart.options.plugins?.legend?.labels;
         if (leg) { snap._leg = leg.color; leg.color = lightTxt; }
-        saved.push({ chart, snap });
+        savedCharts.push({ chart, snap });
         chart.update('none');
     });
 
-    html2canvas(el, { backgroundColor: '#ffffff', scale: 2, useCORS: true })
-        .then(canvas => {
-            const a = document.createElement('a');
-            a.download = document.title.split('|')[0].trim().replace(/\s+/g, '-').toLowerCase() + '-results.png';
-            a.href = canvas.toDataURL('image/png');
-            a.click();
-        })
-        .finally(() => {
-            /* Restore original chart colours */
-            saved.forEach(({ chart, snap }) => {
-                Object.entries(chart.options.scales || {}).forEach(([k, sc]) => {
-                    if (snap[k]) {
-                        if (sc.ticks) sc.ticks.color = snap[k].tick;
-                        if (sc.grid)  sc.grid.color  = snap[k].grid;
-                    }
-                });
-                const leg = chart.options.plugins?.legend?.labels;
-                if (leg && snap._leg !== undefined) leg.color = snap._leg;
-                chart.update('none');
+    // 2. Capture with onclone fixes
+    html2canvas(el, { 
+        backgroundColor: '#ffffff', 
+        scale: 2, 
+        useCORS: true,
+        logging: false,
+        onclone: (clonedDoc) => {
+            const clone = clonedDoc.getElementById('results');
+            
+            // FIX 1: Kill all animations and force full opacity
+            clone.style.animation = 'none';
+            clone.style.transition = 'none';
+            clone.style.opacity = '1';
+            clone.style.transform = 'none';
+
+            // FIX 2: Manually set Hero Colors (html2canvas hates gradients/variables)
+            const hero = clone.querySelector('.results-hero, .hero-card, .cashflow-hero');
+            if (hero) {
+                hero.style.boxShadow = 'none';
+                // Check current state to apply correct solid color
+                if (hero.classList.contains('positive')) {
+                    hero.style.background = '#16a34a'; // Solid Green
+                } else if (hero.classList.contains('negative') || hero.classList.contains('red')) {
+                    hero.style.background = '#dc2626'; // Solid Red
+                } else {
+                    hero.style.background = '#2563eb'; // Solid Blue
+                }
+                hero.style.color = '#ffffff';
+            }
+
+            // FIX 3: Force text and card colors
+            clone.style.color = '#111827';
+            clone.querySelectorAll('.stat-card, .chart-card').forEach(card => {
+                card.style.background = '#ffffff';
+                card.style.borderColor = '#e5e7eb';
+                card.style.opacity = '1';
             });
-            el.classList.remove('capturing');
-            btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Save as Image';
-            btn.disabled = false;
+
+            // Hide UI elements
+            const dlBar = clone.querySelector('.download-bar');
+            if (dlBar) dlBar.style.display = 'none';
+
+            // Show input summary in export
+            const summary = clone.querySelector('.input-summary');
+            if (summary) summary.style.display = 'block';
+        }
+    })
+    .then(canvas => {
+        const a = document.createElement('a');
+        a.download = document.title.split('|')[0].trim().replace(/\s+/g, '-').toLowerCase() + '-results.png';
+        a.href = canvas.toDataURL('image/png');
+        a.click();
+    })
+    .finally(() => {
+        // Restore Charts
+        savedCharts.forEach(({ chart, snap }) => {
+            Object.entries(chart.options.scales || {}).forEach(([k, sc]) => {
+                if (snap[k]) {
+                    if (sc.ticks) sc.ticks.color = snap[k].tick;
+                    if (sc.grid)  sc.grid.color  = snap[k].grid;
+                }
+            });
+            const leg = chart.options.plugins?.legend?.labels;
+            if (leg && snap._leg !== undefined) leg.color = snap._leg;
+            chart.update('none');
         });
+
+        btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Save as Image';
+        btn.disabled = false;
+    });
 }
 </script>
 
