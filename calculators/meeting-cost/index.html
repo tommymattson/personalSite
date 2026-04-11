@@ -5,82 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Meeting Cost Calculator</title>
     <link rel="stylesheet" href="../../styles.css">
+    <link rel="stylesheet" href="../calculators.css">
     <script src="../../main.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
     <style>
-        :root {
-            --bg-color:#ffffff;--text-primary:#111827;--text-secondary:#4b5563;
-            --accent:#2563eb;--accent-hover:#1d4ed8;--card-bg:#ffffff;
-            --shadow:0 4px 6px -1px rgba(0,0,0,0.1),0 2px 4px -1px rgba(0,0,0,0.06);--radius:12px;
+        /* Page-specific: red hero, attendee row grid */
+        .hero-card { background: linear-gradient(135deg, #dc2626, #b91c1c); }
+        .attendee-list { margin-bottom: 1rem; }
+        .attendee-row {
+            display: grid; grid-template-columns: 2fr 1fr auto;
+            gap: 0.75rem; align-items: end; margin-bottom: 0.6rem;
         }
-        body { font-family:'Inter',system-ui,-apple-system,sans-serif; background:#f9fafb; color:var(--text-primary); margin:0; padding:2rem 1rem; line-height:1.5; }
-        .container { max-width:800px; margin:0 auto; }
-
-        .page-intro { margin-bottom:2rem; text-align:center; }
-        .page-intro h1 { font-size:2.2rem; font-weight:800; letter-spacing:-0.04rem; line-height:1.15; margin-bottom:0.5rem; }
-        .page-intro p { font-size:1.05rem; color:var(--text-secondary); max-width:580px; margin:0 auto; }
-
-        .calc-form { background:var(--card-bg); border-radius:var(--radius); box-shadow:var(--shadow); border:1px solid rgba(0,0,0,0.05); padding:2rem; margin-bottom:2.5rem; }
-        .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:1.25rem; }
-        @media(max-width:600px){ .form-grid{grid-template-columns:1fr;} }
-
-        .form-group { display:flex; flex-direction:column; gap:0.3rem; }
-        .form-group label { font-weight:600; font-size:0.8rem; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.04em; }
-        .form-group .hint { font-weight:400; font-size:0.72rem; color:var(--text-secondary); text-transform:none; letter-spacing:0; }
-        .form-group input, .form-group select { padding:0.65rem 0.85rem; border:1.5px solid rgba(0,0,0,0.12); border-radius:8px; font-size:1rem; font-family:inherit; background:var(--bg-color); color:var(--text-primary); transition:border-color 0.2s; }
-        .form-group input:focus, .form-group select:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(37,99,235,0.15); }
-
-        /* Attendee rows */
-        .attendee-list { margin-bottom:1rem; }
-        .attendee-row { display:grid; grid-template-columns:2fr 1fr auto; gap:0.75rem; align-items:end; margin-bottom:0.6rem; }
-        @media(max-width:600px){ .attendee-row{grid-template-columns:1fr 1fr auto;} }
-        .attendee-row input { padding:0.55rem 0.75rem; border:1.5px solid rgba(0,0,0,0.12); border-radius:8px; font-size:0.95rem; font-family:inherit; background:var(--bg-color); color:var(--text-primary); }
-        .attendee-row input:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(37,99,235,0.15); }
-        .remove-btn { background:none; border:none; color:#dc2626; font-size:1.3rem; cursor:pointer; padding:0.4rem; border-radius:6px; line-height:1; transition:background 0.15s; }
-        .remove-btn:hover { background:rgba(220,38,38,0.08); }
-        .add-btn { background:none; border:1.5px dashed rgba(0,0,0,0.15); border-radius:8px; padding:0.55rem 1rem; cursor:pointer; font-family:inherit; font-size:0.88rem; font-weight:600; color:var(--accent); transition:border-color 0.2s; width:100%; }
-        .add-btn:hover { border-color:var(--accent); background:rgba(37,99,235,0.04); }
-
-        .section-title { font-weight:700; font-size:1rem; margin:1.25rem 0 0.6rem; padding-top:1rem; border-top:1px solid rgba(0,0,0,0.06); color:var(--text-primary); }
-
-        .calc-btn { display:block; width:100%; margin-top:1.5rem; padding:0.9rem; font-size:1.05rem; font-weight:700; font-family:inherit; background:var(--accent); color:#fff; border:none; border-radius:8px; cursor:pointer; transition:background 0.2s,transform 0.1s; }
-        .calc-btn:hover { background:var(--accent-hover); transform:translateY(-1px); }
-
-        .results { display:none; }
-        .results.visible { display:block; animation:fadeUp 0.4s ease; }
-        @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
-
-        .hero-card { background:linear-gradient(135deg,#dc2626,#b91c1c); border-radius:var(--radius); padding:2.25rem 1.5rem; margin-bottom:1.5rem; text-align:center; color:#fff; }
-        .hero-card .hero-value { font-size:3rem; font-weight:800; line-height:1.1; margin-bottom:0.2rem; }
-        .hero-card .hero-sub { font-size:1rem; opacity:0.85; }
-        .hero-card .hero-label { font-size:0.75rem; text-transform:uppercase; letter-spacing:0.06em; opacity:0.7; }
-        @media(max-width:600px){ .hero-card .hero-value{font-size:2.4rem;} }
-
-        .stat-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:0.75rem; margin-bottom:1.5rem; }
-        .stat-card { background:var(--card-bg); border-radius:var(--radius); box-shadow:var(--shadow); border:1px solid rgba(0,0,0,0.05); padding:1rem 0.75rem; text-align:center; }
-        .stat-card .val { font-size:1.3rem; font-weight:800; color:var(--accent); }
-        .stat-card .val.red { color:#dc2626; }
-        .stat-card .lbl { font-size:0.65rem; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.04em; margin-top:0.15rem; }
-        @media(max-width:600px){ .stat-row{grid-template-columns:1fr 1fr;} .stat-card .val{font-size:1.15rem;} }
-
-        .chart-card { background:var(--card-bg); border-radius:var(--radius); box-shadow:var(--shadow); border:1px solid rgba(0,0,0,0.05); padding:1.5rem; margin-bottom:1.5rem; }
-        .chart-card h3 { margin:0 0 0.75rem; font-size:1rem; }
-        .chart-wrap canvas { width:100%!important; }
-        @media(max-width:600px){ .chart-card{padding:1rem;} .chart-card h3{font-size:0.9rem;} }
-
-        @media(prefers-color-scheme:dark){
-            body{background:#111827;color:#f9fafb;}
-            :root{--bg-color:#111827;--card-bg:#1f2937;--text-primary:#f9fafb;--text-secondary:#9ca3af;}
-            .form-group input,.form-group select,.attendee-row input{border-color:rgba(255,255,255,0.12);}
-            .section-title{border-top-color:rgba(255,255,255,0.08);}
-            .add-btn{border-color:rgba(255,255,255,0.15);}
+        @media (max-width: 600px) {
+            .attendee-row { grid-template-columns: 1fr 1fr auto; }
         }
     </style>
 </head>
-<body>
+<body class="standalone">
 <div class="container">
+    <a href="../" class="back-link">&larr; All Calculators</a>
 
     <section class="page-intro">
+        <div class="subtitle">Understand your what your meetings are costing</div>
         <h1>Meeting Cost Calculator</h1>
         <p>Find out the real cost of your meetings. Add each attendee with their hourly rate, set the meeting duration and frequency, and see what those meetings actually cost your organization.</p>
     </section>
