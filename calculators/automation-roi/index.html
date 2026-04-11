@@ -5,192 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Task Automation ROI Calculator | Thomas Mattson</title>
     <link rel="stylesheet" href="../../styles.css">
+    <link rel="stylesheet" href="../calculators.css">
     <script src="../../main.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
     <style>
-        .page-intro { margin-bottom: 2.5rem; max-width: 700px; }
-        .page-intro h1 {
-            font-size: 2.4rem; font-weight: 800;
-            letter-spacing: -0.04rem; line-height: 1.15; margin-bottom: 0.5rem;
-        }
-        .page-intro .subtitle {
-            font-size: 1rem; color: var(--accent); font-weight: 600;
-            margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;
-        }
-        .page-intro p { font-size: 1.1rem; color: var(--text-secondary); }
-        .back-link {
-            display: inline-block; margin-bottom: 1.5rem;
-            color: var(--accent); text-decoration: none; font-weight: 600; font-size: 0.9rem;
-        }
-
-        /* Form */
-        .calc-form {
-            background: var(--card-bg); border-radius: var(--radius);
-            box-shadow: var(--shadow); border: 1px solid rgba(0,0,0,0.05);
-            padding: 2rem; margin-bottom: 2.5rem;
-        }
-        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
-        @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
-
-        .form-group { display: flex; flex-direction: column; gap: 0.35rem; }
-        .form-group label {
-            font-weight: 600; font-size: 0.8rem; color: var(--text-secondary);
-            text-transform: uppercase; letter-spacing: 0.04em;
-        }
-        .form-group .label-hint {
-            font-weight: 400; font-size: 0.75rem; color: var(--text-secondary);
-            text-transform: none; letter-spacing: 0;
-        }
-        .form-group input, .form-group select {
-            padding: 0.7rem 0.9rem; border: 1.5px solid rgba(0,0,0,0.12);
-            border-radius: 8px; font-size: 1rem; font-family: 'Inter', sans-serif;
-            background: var(--bg-color); color: var(--text-primary); transition: border-color 0.2s;
-        }
-        .form-group input:focus, .form-group select:focus {
-            outline: none; border-color: var(--accent);
-            box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
-        }
-        .form-section-title {
-            font-weight: 700; font-size: 1.1rem; margin: 1.5rem 0 0.75rem;
-            padding-top: 1.25rem; border-top: 1px solid rgba(0,0,0,0.06);
-            color: var(--text-primary);
-        }
-        .form-section-title:first-child { margin-top: 0; border-top: none; padding-top: 0; }
-
-        /* Task rows */
+        /* Page-specific: task row grid layout */
         .task-list { margin-bottom: 1rem; }
         .task-row {
             display: grid; grid-template-columns: 2fr 1fr 1fr auto;
             gap: 0.75rem; align-items: end; margin-bottom: 0.75rem;
         }
         @media (max-width: 600px) {
-            .task-row { grid-template-columns: 1fr 1fr; }
+            .task-row { grid-template-columns: 1fr 1fr auto; }
             .task-row .form-group:first-child { grid-column: 1 / -1; }
-        }
-        .task-row input, .task-row select {
-            padding: 0.6rem 0.75rem; border: 1.5px solid rgba(0,0,0,0.12);
-            border-radius: 8px; font-size: 0.95rem; font-family: 'Inter', sans-serif;
-            background: var(--bg-color); color: var(--text-primary);
-        }
-        .task-row input:focus, .task-row select:focus {
-            outline: none; border-color: var(--accent);
-            box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
-        }
-        .remove-task {
-            background: none; border: none; color: #dc2626; font-size: 1.3rem;
-            cursor: pointer; padding: 0.5rem; line-height: 1; border-radius: 6px;
-            transition: background 0.15s; align-self: end; margin-bottom: 0.15rem;
-        }
-        .remove-task:hover { background: rgba(220,38,38,0.08); }
-
-        .add-task-btn {
-            background: none; border: 1.5px dashed rgba(0,0,0,0.15);
-            border-radius: 8px; padding: 0.6rem 1rem; cursor: pointer;
-            font-family: 'Inter', sans-serif; font-size: 0.9rem; font-weight: 600;
-            color: var(--accent); transition: border-color 0.2s, background 0.2s;
-            width: 100%;
-        }
-        .add-task-btn:hover { border-color: var(--accent); background: rgba(37,99,235,0.04); }
-
-        .calc-btn {
-            display: block; width: 100%; margin-top: 1.75rem; padding: 0.85rem;
-            font-size: 1.05rem; font-weight: 700; font-family: 'Inter', sans-serif;
-            background: var(--accent); color: #fff; border: none; border-radius: 8px;
-            cursor: pointer; transition: background 0.2s, transform 0.1s;
-        }
-        .calc-btn:hover { background: var(--accent-hover); transform: translateY(-1px); }
-
-        /* Results */
-        .results { display: none; }
-        .results.visible { display: block; animation: fadeUp 0.4s ease; }
-        @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
-
-        .results-hero {
-            border-radius: var(--radius); padding: 2.5rem 1.5rem; margin-bottom: 2rem;
-            text-align: center; color: #fff;
-        }
-        .results-hero.positive {
-            background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
-        }
-        .results-hero.negative {
-            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
-        }
-        .results-hero .hero-value {
-            font-size: 3.2rem; font-weight: 800; line-height: 1.1; margin-bottom: 0.25rem;
-        }
-        .results-hero .hero-sub { font-size: 1.05rem; opacity: 0.85; margin-bottom: 0.5rem; }
-        .results-hero .hero-label {
-            font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.7;
-        }
-        @media (max-width: 600px) {
-            .results-hero { padding: 2rem 1rem; }
-            .results-hero .hero-value { font-size: 2.5rem; }
-        }
-
-        .stat-row {
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-            gap: 1rem; margin-bottom: 2rem;
-        }
-        .stat-card {
-            background: var(--card-bg); border-radius: var(--radius);
-            box-shadow: var(--shadow); border: 1px solid rgba(0,0,0,0.05);
-            padding: 1.25rem 1rem; text-align: center;
-        }
-        .stat-card .val { font-size: 1.5rem; font-weight: 800; color: var(--accent); }
-        .stat-card .val.green { color: #16a34a; }
-        .stat-card .val.red { color: #dc2626; }
-        .stat-card .lbl {
-            font-size: 0.7rem; font-weight: 600; color: var(--text-secondary);
-            text-transform: uppercase; letter-spacing: 0.04em; margin-top: 0.2rem;
-        }
-        @media (max-width: 600px) {
-            .stat-row { grid-template-columns: 1fr 1fr; gap: 0.75rem; }
-            .stat-card { padding: 1rem 0.75rem; }
-            .stat-card .val { font-size: 1.2rem; }
-        }
-
-        .chart-card {
-            background: var(--card-bg); border-radius: var(--radius);
-            box-shadow: var(--shadow); border: 1px solid rgba(0,0,0,0.05);
-            padding: 1.5rem; margin-bottom: 2rem;
-        }
-        .chart-card h3 { margin-top: 0; margin-bottom: 1rem; font-size: 1.05rem; }
-        .chart-wrap { position: relative; width: 100%; }
-        .chart-wrap canvas { width: 100% !important; }
-        @media (max-width: 600px) {
-            .chart-card { padding: 1rem; }
-            .chart-card h3 { font-size: 0.95rem; }
-        }
-
-        /* Task breakdown table */
-        .task-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-        .task-table th, .task-table td {
-            padding: 0.65rem 0.75rem; text-align: right;
-            border-bottom: 1px solid rgba(0,0,0,0.06);
-        }
-        .task-table th:first-child, .task-table td:first-child { text-align: left; }
-        .task-table th {
-            font-weight: 700; font-size: 0.7rem; text-transform: uppercase;
-            letter-spacing: 0.04em; color: var(--text-secondary);
-        }
-        .task-table .total-row { font-weight: 700; border-top: 2px solid var(--accent); }
-        @media (prefers-color-scheme: dark) {
-            .task-table th, .task-table td { border-bottom-color: rgba(255,255,255,0.08); }
-        }
-
-        @media (prefers-color-scheme: dark) {
-            .form-group input, .form-group select,
-            .task-row input, .task-row select { border-color: rgba(255,255,255,0.12); }
-            .form-section-title { border-top-color: rgba(255,255,255,0.08); }
-            .add-task-btn { border-color: rgba(255,255,255,0.15); }
         }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <my-header></my-header>
-
     <a href="../" class="back-link">&larr; All Calculators</a>
 
     <section class="page-intro">

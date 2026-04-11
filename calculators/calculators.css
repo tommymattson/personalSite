@@ -1,0 +1,491 @@
+/* calculators.css — Shared styles for all calculator pages
+   =========================================================
+   Consolidates form, result, chart, stat-card, hero, and
+   dark-mode / mobile-responsive styles that were previously
+   duplicated in each calculator's inline <style> block.
+   --------------------------------------------------------- */
+
+/* ── Standalone calculator overrides ──
+   Pages that render as white-bg standalone tools (customer-ltv,
+   meeting-cost, rent-my-home) add class="standalone" to <body>.  */
+body.standalone {
+    background: #f9fafb;
+    padding: 2rem 1rem;
+    --bg-color: #ffffff;
+    --card-bg: #ffffff;
+    --text-secondary: #4b5563;
+}
+
+/* ── Page Intro ── */
+.page-intro {
+    margin-bottom: 2.5rem;
+    max-width: 700px;
+}
+.page-intro h1 {
+    font-size: 2.4rem;
+    font-weight: 800;
+    letter-spacing: -0.04rem;
+    line-height: 1.15;
+    margin-bottom: 0.5rem;
+}
+.page-intro p {
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+}
+
+/* Centered variant for standalone calculators */
+body.standalone .page-intro {
+    text-align: center;
+    max-width: 800px;
+}
+body.standalone .page-intro p {
+    max-width: 580px;
+    margin: 0 auto;
+}
+body.standalone .page-intro h1 {
+    font-size: 2.2rem;
+}
+
+/* ── Form Card ── */
+.calc-form {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    border: 1px solid rgba(0,0,0,0.05);
+    padding: 2rem;
+    margin-bottom: 2.5rem;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.form-group label {
+    font-weight: 600;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+/* Hint text under labels — supports both class names */
+.form-group .label-hint,
+.form-group .hint {
+    font-weight: 400;
+    font-size: 0.73rem;
+    color: var(--text-secondary);
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+/* Inputs & selects */
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 0.7rem 0.9rem;
+    border: 1.5px solid rgba(0,0,0,0.12);
+    border-radius: 8px;
+    font-size: 1rem;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: var(--bg-color);
+    color: var(--text-primary);
+    transition: border-color 0.2s;
+    min-height: 44px; /* Touch-friendly tap target */
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
+}
+
+/* Section dividers */
+.form-section-title,
+.section-title {
+    font-weight: 700;
+    font-size: 1.1rem;
+    margin: 1.5rem 0 0.75rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid rgba(0,0,0,0.06);
+    color: var(--text-primary);
+}
+.form-section-title:first-child,
+.section-title:first-child {
+    margin-top: 0;
+    border-top: none;
+    padding-top: 0;
+}
+
+/* ── Dynamic Row Inputs (tasks, attendees) ── */
+.task-row input,
+.task-row select,
+.attendee-row input {
+    width: 100%;
+    padding: 0.6rem 0.75rem;
+    border: 1.5px solid rgba(0,0,0,0.12);
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: var(--bg-color);
+    color: var(--text-primary);
+    min-height: 44px;
+}
+
+.task-row input:focus,
+.task-row select:focus,
+.attendee-row input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
+}
+
+/* Remove buttons */
+.remove-task,
+.remove-btn {
+    background: none;
+    border: none;
+    color: #dc2626;
+    font-size: 1.3rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 6px;
+    line-height: 1;
+    transition: background 0.15s;
+    align-self: end;
+    margin-bottom: 0.15rem;
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.remove-task:hover,
+.remove-btn:hover {
+    background: rgba(220,38,38,0.08);
+}
+
+/* Add buttons (dashed) */
+.add-task-btn,
+.add-btn {
+    background: none;
+    border: 1.5px dashed rgba(0,0,0,0.15);
+    border-radius: 8px;
+    padding: 0.6rem 1rem;
+    cursor: pointer;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--accent);
+    transition: border-color 0.2s, background 0.2s;
+    width: 100%;
+    min-height: 44px;
+}
+.add-task-btn:hover,
+.add-btn:hover {
+    border-color: var(--accent);
+    background: rgba(37,99,235,0.04);
+}
+
+/* ── Calculate Button ── */
+.calc-btn {
+    display: block;
+    width: 100%;
+    margin-top: 1.75rem;
+    padding: 0.85rem;
+    font-size: 1.05rem;
+    font-weight: 700;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    min-height: 48px;
+}
+.calc-btn:hover {
+    background: var(--accent-hover);
+    transform: translateY(-1px);
+}
+
+/* ── Results Area ── */
+.results { display: none; }
+.results.visible { display: block; animation: fadeUp 0.4s ease; }
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Hero / Summary Cards ──
+   Supports .results-hero (automation-roi, gas),
+   .hero-card (clv, meeting), .cashflow-hero (rent)  */
+.results-hero,
+.hero-card,
+.cashflow-hero {
+    border-radius: var(--radius);
+    padding: 2.25rem 1.5rem;
+    margin-bottom: 1.5rem;
+    text-align: center;
+    color: #fff;
+}
+
+/* Color variants */
+.results-hero.positive,
+.cashflow-hero.positive {
+    background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+}
+.results-hero.negative,
+.cashflow-hero.negative {
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+}
+.hero-card.blue,
+.hero-card {
+    background: linear-gradient(135deg, var(--accent), #1d4ed8);
+}
+.hero-card.red {
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
+}
+
+/* Hero typography — normalized class names */
+.hero-value, .cf-value {
+    font-size: 3rem;
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 0.25rem;
+}
+.hero-sub, .cf-sub {
+    font-size: 1rem;
+    opacity: 0.85;
+    margin-bottom: 0.5rem;
+}
+.hero-label, .cf-label {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    opacity: 0.7;
+}
+
+/* ── Stat Cards ── */
+.stat-row,
+.results-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 0.85rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    border: 1px solid rgba(0,0,0,0.05);
+    padding: 1.15rem 0.85rem;
+    text-align: center;
+}
+
+/* Value — supports both .val and .stat-value */
+.stat-card .val,
+.stat-card .stat-value {
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: var(--accent);
+    line-height: 1.2;
+}
+.stat-card .val.green,
+.stat-card .stat-value.positive { color: #16a34a; }
+.stat-card .val.red,
+.stat-card .stat-value.negative { color: #dc2626; }
+
+/* Label — supports both .lbl and .stat-label */
+.stat-card .lbl,
+.stat-card .stat-label {
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-top: 0.2rem;
+}
+
+/* ── Chart Cards ── */
+.chart-card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    border: 1px solid rgba(0,0,0,0.05);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+.chart-card h3 {
+    margin: 0 0 0.85rem;
+    font-size: 1.05rem;
+}
+.chart-wrap {
+    position: relative;
+    width: 100%;
+}
+.chart-wrap canvas {
+    width: 100% !important;
+}
+
+/* ── Data Tables ── */
+.task-table,
+.breakdown-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+.task-table th, .task-table td,
+.breakdown-table th, .breakdown-table td {
+    padding: 0.65rem 0.75rem;
+    text-align: right;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+}
+.task-table th:first-child, .task-table td:first-child,
+.breakdown-table th:first-child, .breakdown-table td:first-child {
+    text-align: left;
+}
+.task-table th,
+.breakdown-table th {
+    font-weight: 700;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-secondary);
+}
+.task-table .total-row {
+    font-weight: 700;
+    border-top: 2px solid var(--accent);
+}
+.breakdown-table tr.break-even-row {
+    background: rgba(37, 99, 235, 0.06);
+    font-weight: 600;
+}
+
+/* ── Finance toggle (gas calc) ── */
+.finance-fields { display: none; }
+.finance-fields.visible { display: contents; }
+
+
+/* ==========================================================
+   DARK MODE
+   ========================================================== */
+@media (prefers-color-scheme: dark) {
+    body.standalone {
+        background: #111827;
+        color: #f9fafb;
+        --bg-color: #111827;
+        --card-bg: #1f2937;
+        --text-primary: #f9fafb;
+        --text-secondary: #9ca3af;
+    }
+
+    .form-group input,
+    .form-group select,
+    .task-row input,
+    .task-row select,
+    .attendee-row input {
+        border-color: rgba(255,255,255,0.12);
+    }
+
+    .form-section-title,
+    .section-title {
+        border-top-color: rgba(255,255,255,0.08);
+    }
+
+    .add-task-btn,
+    .add-btn {
+        border-color: rgba(255,255,255,0.15);
+    }
+
+    .task-table th, .task-table td,
+    .breakdown-table th, .breakdown-table td {
+        border-bottom-color: rgba(255,255,255,0.08);
+    }
+
+    .breakdown-table tr.break-even-row {
+        background: rgba(96, 165, 250, 0.1);
+    }
+}
+
+
+/* ==========================================================
+   MOBILE RESPONSIVE
+   ========================================================== */
+@media (max-width: 600px) {
+    /* Form grid stacks to single column */
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    /* Tighter form padding */
+    .calc-form {
+        padding: 1.5rem 1.25rem;
+    }
+
+    /* Hero cards */
+    .hero-value, .cf-value {
+        font-size: 2.4rem;
+    }
+    .results-hero,
+    .hero-card,
+    .cashflow-hero {
+        padding: 2rem 1rem;
+    }
+    .results-hero .hero-value {
+        font-size: 2.5rem;
+    }
+
+    /* Stat cards: 2-column on mobile */
+    .stat-row,
+    .results-summary {
+        grid-template-columns: 1fr 1fr;
+        gap: 0.65rem;
+    }
+    .stat-card {
+        padding: 0.9rem 0.65rem;
+    }
+    .stat-card .val,
+    .stat-card .stat-value {
+        font-size: 1.15rem;
+    }
+    .stat-card .lbl,
+    .stat-card .stat-label {
+        font-size: 0.6rem;
+    }
+
+    /* Chart cards tighter */
+    .chart-card {
+        padding: 1rem;
+    }
+    .chart-card h3 {
+        font-size: 0.92rem;
+    }
+
+    /* Data tables: allow horizontal scroll */
+    .task-table,
+    .breakdown-table {
+        font-size: 0.8rem;
+    }
+    .task-table th, .task-table td,
+    .breakdown-table th, .breakdown-table td {
+        padding: 0.5rem 0.5rem;
+    }
+
+    /* Page intro */
+    .page-intro h1 {
+        font-size: 1.85rem;
+    }
+    .page-intro p {
+        font-size: 1rem;
+    }
+}
