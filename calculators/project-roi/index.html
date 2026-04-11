@@ -234,26 +234,10 @@
         <div class="results-hero" id="heroCard"></div>
         <div class="stat-row" id="statRow"></div>
 
-        <div class="chart-card">
-            <h3>Cumulative Cash Flow</h3>
-            <div class="chart-wrap"><canvas id="cashFlowChart"></canvas></div>
-        </div>
-
-        <div class="chart-card">
-            <h3>Annual Benefits vs. Costs</h3>
-            <div class="chart-wrap"><canvas id="annualChart"></canvas></div>
-        </div>
-
-        <div class="chart-card">
-            <h3>Year-by-Year Breakdown</h3>
-            <div style="overflow-x:auto;">
-                <table class="breakdown-table" id="breakdownTable"></table>
-            </div>
-        </div>
-
         <!-- Sensitivity panel (interactive, hidden from export) -->
         <div class="sensitivity-panel" id="sensitivityPanel">
             <h3>Stress-Test Your Assumptions</h3>
+            <p style="font-size:0.88rem; color:var(--text-secondary); margin-top:-0.5rem; margin-bottom:1.25rem;">Your inputs above are estimates. Use these sliders to see how the key metrics change if costs run over budget, benefits come in lower than expected, or your discount rate shifts. If NPV stays positive across a wide range of adjustments, the business case is robust.</p>
 
             <div class="slider-group">
                 <div class="slider-header">
@@ -293,6 +277,23 @@
         <div class="chart-card">
             <h3>NPV Sensitivity to Discount Rate</h3>
             <div class="chart-wrap"><canvas id="sensitivityChart"></canvas></div>
+        </div>
+
+        <div class="chart-card">
+            <h3>Cumulative Cash Flow</h3>
+            <div class="chart-wrap"><canvas id="cashFlowChart"></canvas></div>
+        </div>
+
+        <div class="chart-card">
+            <h3>Annual Benefits vs. Costs</h3>
+            <div class="chart-wrap"><canvas id="annualChart"></canvas></div>
+        </div>
+
+        <div class="chart-card">
+            <h3>Year-by-Year Breakdown</h3>
+            <div style="overflow-x:auto;">
+                <table class="breakdown-table" id="breakdownTable"></table>
+            </div>
         </div>
     </div>
 
@@ -341,7 +342,6 @@ function calcNPV(rate, cashFlows) {
 }
 
 function calcIRR(cashFlows, guess = 0.1) {
-    // Newton-Raphson
     let rate = guess;
     for (let i = 0; i < 200; i++) {
         let npv = 0, dnpv = 0;
@@ -435,11 +435,10 @@ function buildCashFlows(inp, adj = {}) {
 let cashFlowInst = null, annualInst = null, sensChartInst = null;
 let lastInputs = null;
 
-/* ── Main calculate ── */
-function calculate() {
-    lastInputs = gatherInputs();
-    const inp = lastInputs;
-    const { cfs, dr, upfront, annB, annC, netAnnual } = buildCashFlows(inp);
+/* ── Render all results (called by calculate and by sliders) ── */
+function renderResults(inp, adj) {
+    const { cfs, dr, upfront, annB, annC, netAnnual } = buildCashFlows(inp, adj);
+    const isStressed = adj && (adj.capex || adj.benefit || adj.cost || adj.discount !== undefined);
 
     const npv = calcNPV(dr, cfs);
     const irr = calcIRR(cfs);
@@ -454,9 +453,9 @@ function calculate() {
     const costItems = inp.costs.map(c => c.name + ': ' + fmt(c.amount) + '/yr').join(', ');
     const benefitItems = inp.benefits.map(b => b.name + ': ' + fmt(b.amount) + '/yr').join(', ');
     $('inputSummary').innerHTML = `<h4>${inp.projectName} — Input Assumptions</h4><div class="summary-grid">
-        <div class="summary-item"><span class="s-label">Upfront CapEx</span><span class="s-value">${fmt(upfront)}</span></div>
+        <div class="summary-item"><span class="s-label">Upfront CapEx</span><span class="s-value">${fmt(inp.upfront)}</span></div>
         <div class="summary-item"><span class="s-label">Time Horizon</span><span class="s-value">${inp.horizon} years</span></div>
-        <div class="summary-item"><span class="s-label">Discount Rate</span><span class="s-value">${(dr*100).toFixed(1)}%</span></div>
+        <div class="summary-item"><span class="s-label">Discount Rate</span><span class="s-value">${(inp.discountRate*100).toFixed(1)}%</span></div>
         <div class="summary-item"><span class="s-label">Annual Costs</span><span class="s-value">${costItems}</span></div>
         <div class="summary-item"><span class="s-label">Annual Benefits</span><span class="s-value">${benefitItems}</span></div>
     </div>`;
@@ -464,7 +463,7 @@ function calculate() {
     // Hero
     $('heroCard').className = 'results-hero ' + (isPositive ? 'positive' : 'negative');
     $('heroCard').innerHTML = `
-        <div class="hero-label">Net Present Value (${inp.horizon}-Year)</div>
+        <div class="hero-label">Net Present Value (${inp.horizon}-Year)${isStressed ? ' — Stressed' : ''}</div>
         <div class="hero-value">${fmt(npv)}</div>
         <div class="hero-sub">${!isNaN(irr) ? (irr * 100).toFixed(1) + '% IRR' : 'IRR N/A'} &bull; ${simplePayback !== null ? simplePayback.toFixed(1) + '-year payback' : 'No payback in period'}</div>`;
 
@@ -480,13 +479,56 @@ function calculate() {
         <div class="stat-card"><div class="val ${roiPct >= 0 ? 'green' : 'red'}">${roiPct.toFixed(0)}%</div><div class="lbl">${inp.horizon}-Year ROI</div></div>
         <div class="stat-card"><div class="val">${fmt(netAnnual)}</div><div class="lbl">Net Annual Cash Flow</div></div>`;
 
-    // Charts
+    // Sensitivity mini-metrics
+    const sensIrrStr = !isNaN(irr) ? (irr * 100).toFixed(1) + '%' : 'N/A';
+    const sensSPStr = simplePayback !== null ? simplePayback.toFixed(1) + ' yrs' : '>' + inp.horizon + ' yrs';
+    const sensDPStr = discPayback !== null ? discPayback.toFixed(1) + ' yrs' : '>' + inp.horizon + ' yrs';
+    $('sensMetrics').innerHTML = `
+        <div class="sens-metric"><div class="sm-val ${npv >= 0 ? 'green' : 'red'}">${fmt(npv)}</div><div class="sm-lbl">NPV</div></div>
+        <div class="sens-metric"><div class="sm-val">${sensIrrStr}</div><div class="sm-lbl">IRR</div></div>
+        <div class="sens-metric"><div class="sm-val">${sensSPStr}</div><div class="sm-lbl">Simple Payback</div></div>
+        <div class="sens-metric"><div class="sm-val">${sensDPStr}</div><div class="sm-lbl">Disc. Payback</div></div>`;
+
+    // ── Charts ──
     const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     const gridClr = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
     const txtClr = isDark ? '#d1d5db' : '#6b7280';
     const mobile = mob();
 
-    // 1. Cumulative cash flow chart
+    // 1. NPV sensitivity to discount rate
+    const sensRates = [];
+    const sensNPVs = [];
+    for (let r = 0; r <= 25; r += 1) {
+        sensRates.push(r + '%');
+        sensNPVs.push(Math.round(calcNPV(r / 100, cfs)));
+    }
+    if (sensChartInst) sensChartInst.destroy();
+    sensChartInst = new Chart($('sensitivityChart'), {
+        type: 'bar',
+        data: {
+            labels: sensRates,
+            datasets: [{
+                label: 'NPV',
+                data: sensNPVs,
+                backgroundColor: sensNPVs.map(v => v >= 0 ? '#16a34a' : '#dc2626'),
+                borderRadius: 3
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: true,
+            aspectRatio: mobile ? 1.3 : 2.5,
+            plugins: {
+                legend: { display: false },
+                tooltip: { callbacks: { label: c => 'NPV at ' + c.label + ': ' + fmt(c.raw) } }
+            },
+            scales: {
+                x: { ticks: { color: txtClr, font: cf(9), maxRotation: mobile ? 45 : 0 }, grid: { display: false } },
+                y: { ticks: { color: txtClr, font: cf(10), callback: v => '$' + (v / 1000).toFixed(0) + 'k', maxTicksLimit: 5 }, grid: { color: gridClr } }
+            }
+        }
+    });
+
+    // 2. Cumulative cash flow chart
     const labels = [];
     const cumUndiscounted = [];
     const cumDiscounted = [];
@@ -536,7 +578,7 @@ function calculate() {
         }
     });
 
-    // 2. Annual benefits vs costs bar
+    // 3. Annual benefits vs costs bar
     const annLabels = [];
     const benefitsData = [];
     const costsData = [];
@@ -570,7 +612,7 @@ function calculate() {
         }
     });
 
-    // 3. Breakdown table
+    // 4. Breakdown table
     let tableHTML = `<thead><tr><th>Year</th><th>Benefits</th><th>Costs</th><th>Net Cash Flow</th><th>Discounted CF</th><th>Cumulative DCF</th></tr></thead><tbody>`;
     let cumDCF = 0;
     let paybackHit = false;
@@ -596,47 +638,20 @@ function calculate() {
     }
     tableHTML += '</tbody>';
     $('breakdownTable').innerHTML = tableHTML;
+}
 
-    // 4. NPV sensitivity to discount rate chart
-    const sensRates = [];
-    const sensNPVs = [];
-    for (let r = 0; r <= 25; r += 1) {
-        sensRates.push(r + '%');
-        sensNPVs.push(Math.round(calcNPV(r / 100, cfs)));
-    }
-    if (sensChartInst) sensChartInst.destroy();
-    sensChartInst = new Chart($('sensitivityChart'), {
-        type: 'bar',
-        data: {
-            labels: sensRates,
-            datasets: [{
-                label: 'NPV',
-                data: sensNPVs,
-                backgroundColor: sensNPVs.map(v => v >= 0 ? '#16a34a' : '#dc2626'),
-                borderRadius: 3
-            }]
-        },
-        options: {
-            responsive: true, maintainAspectRatio: true,
-            aspectRatio: mobile ? 1.3 : 2.5,
-            plugins: {
-                legend: { display: false },
-                tooltip: { callbacks: { label: c => 'NPV at ' + c.label + ': ' + fmt(c.raw) } }
-            },
-            scales: {
-                x: { ticks: { color: txtClr, font: cf(9), maxRotation: mobile ? 45 : 0 }, grid: { display: false } },
-                y: { ticks: { color: txtClr, font: cf(10), callback: v => '$' + (v / 1000).toFixed(0) + 'k', maxTicksLimit: 5 }, grid: { color: gridClr } }
-            }
-        }
-    });
+/* ── Main calculate (called by button) ── */
+function calculate() {
+    lastInputs = gatherInputs();
 
-    // Set sensitivity slider defaults
+    // Reset sliders to baseline
     $('sensCapex').value = 0;
     $('sensBenefit').value = 0;
     $('sensCost').value = 0;
-    $('sensDiscount').value = (dr * 100).toFixed(1);
+    $('sensDiscount').value = (lastInputs.discountRate * 100).toFixed(1);
     updateSensLabels();
-    updateSensMetrics();
+
+    renderResults(lastInputs, {});
 
     $('results').classList.add('visible');
     $('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -654,33 +669,20 @@ function updateSensLabels() {
     $('sensDiscountVal').textContent = discount.toFixed(1) + '%';
 }
 
-function updateSensMetrics() {
+function onSensitivityChange() {
     if (!lastInputs) return;
+    updateSensLabels();
     const adj = {
         capex: parseInt($('sensCapex').value),
         benefit: parseInt($('sensBenefit').value),
         cost: parseInt($('sensCost').value),
         discount: parseFloat($('sensDiscount').value)
     };
-    const { cfs, dr } = buildCashFlows(lastInputs, adj);
-    const npv = calcNPV(dr, cfs);
-    const irr = calcIRR(cfs);
-    const sp = calcPayback(cfs);
-    const dp = calcDiscountedPayback(cfs, dr);
-
-    const irrStr = !isNaN(irr) ? (irr * 100).toFixed(1) + '%' : 'N/A';
-    const spStr = sp !== null ? sp.toFixed(1) + ' yrs' : '>' + lastInputs.horizon + ' yrs';
-    const dpStr = dp !== null ? dp.toFixed(1) + ' yrs' : '>' + lastInputs.horizon + ' yrs';
-
-    $('sensMetrics').innerHTML = `
-        <div class="sens-metric"><div class="sm-val ${npv >= 0 ? 'green' : 'red'}">${fmt(npv)}</div><div class="sm-lbl">NPV</div></div>
-        <div class="sens-metric"><div class="sm-val">${irrStr}</div><div class="sm-lbl">IRR</div></div>
-        <div class="sens-metric"><div class="sm-val">${spStr}</div><div class="sm-lbl">Simple Payback</div></div>
-        <div class="sens-metric"><div class="sm-val">${dpStr}</div><div class="sm-lbl">Disc. Payback</div></div>`;
+    renderResults(lastInputs, adj);
 }
 
 ['sensCapex', 'sensBenefit', 'sensCost', 'sensDiscount'].forEach(id => {
-    $(id).addEventListener('input', () => { updateSensLabels(); updateSensMetrics(); });
+    $(id).addEventListener('input', onSensitivityChange);
 });
 
 document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') calculate(); });
