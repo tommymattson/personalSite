@@ -217,8 +217,17 @@ function downloadResults() {
         scale: 2,
         useCORS: true,
         logging: false,
+        width: 1000, 
+        windowWidth: 1200,
         onclone: (clonedDoc) => {
             const clone = clonedDoc.getElementById('results');
+
+            clone.style.width = '1000px';
+            clone.style.maxWidth = '1000px';
+            clone.style.margin = '0 auto';
+            clone.style.padding = '30px'; 
+            clone.style.boxSizing = 'border-box';
+
             clone.style.animation = 'none';
             clone.style.transition = 'none';
             clone.style.opacity = '1';

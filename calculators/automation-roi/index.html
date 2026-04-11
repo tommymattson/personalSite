@@ -61,7 +61,7 @@
             <div class="task-row" data-idx="0">
                 <div class="form-group">
                     <label>Task Name</label>
-                    <input type="text" class="task-name" placeholder="e.g. Data entry" value="Data entry">
+                    <input type="text" class="task-name" placeholder="e.g. Receipt input for expense reports" value="Receipt input for expense reports">
                 </div>
                 <div class="form-group">
                     <label>Hours</label>
@@ -103,6 +103,7 @@
                     <option value="1">1 Year</option>
                     <option value="2">2 Years</option>
                     <option value="3" selected>3 Years</option>
+                    <option value="4">4 Years</option>
                     <option value="5">5 Years</option>
                 </select>
             </div>
@@ -423,7 +424,38 @@ function calculate() {
                 legend: { position: 'bottom', labels: { color: txtClr, font: chartFont(11), boxWidth: 12, padding: 16 } },
                 tooltip: { callbacks: { label: c => c.label + ': ' + c.raw + 'h/wk (' + (c.raw / hoursPerWeek * 100).toFixed(0) + '%)' } }
             }
-        }
+        },
+        plugins: [{
+            id: 'centerText',
+            beforeDraw: function(chart) {
+                const width = chart.width;
+                const height = chart.height;
+                const ctx = chart.ctx;
+
+                ctx.restore();
+                
+                // Dynamically scale font based on chart height
+                const fontSize = (height / 150).toFixed(2);
+                ctx.textBaseline = "middle";
+
+                // 1. Draw the Hours (Large Text)
+                ctx.font = "bold " + fontSize + "em Inter, sans-serif";
+                ctx.fillStyle = isDark ? '#ffffff' : '#111827';
+                const text = weeklySavedHrs.toFixed(1) + "h";
+                const textX = Math.round((width - ctx.measureText(text).width) / 2);
+                const textY = height / 2.1; // Slightly above true center
+                ctx.fillText(text, textX, textY);
+
+                // 2. Draw the Subtitle (Smaller Text)
+                ctx.font = "500 " + (fontSize * 0.4).toFixed(2) + "em Inter, sans-serif";
+                ctx.fillStyle = txtClr;
+                const subText = "/ week";
+                const subTextX = Math.round((width - ctx.measureText(subText).width) / 2);
+                ctx.fillText(subText, subTextX, textY + (height * 0.12));
+                
+                ctx.save();
+            }
+        }]
     });
 
     $('results').classList.add('visible');
@@ -463,9 +495,18 @@ function downloadResults() {
         scale: 2, 
         useCORS: true,
         logging: false,
+        width: 1000, 
+        windowWidth: 1200,
         onclone: (clonedDoc) => {
             const clone = clonedDoc.getElementById('results');
-            
+
+            // FIX 0: Force the cloned element to a desktop width
+            clone.style.width = '1000px';
+            clone.style.maxWidth = '1000px';
+            clone.style.margin = '0 auto';
+            clone.style.padding = '30px'; 
+            clone.style.boxSizing = 'border-box';
+
             // FIX 1: Kill all animations and force full opacity
             clone.style.animation = 'none';
             clone.style.transition = 'none';
@@ -493,6 +534,15 @@ function downloadResults() {
                 card.style.background = '#ffffff';
                 card.style.borderColor = '#e5e7eb';
                 card.style.opacity = '1';
+            });
+
+            // FIX 4: Prevent Chart Stretching (Donut & Lines)
+            clone.querySelectorAll('canvas').forEach(canvas => {
+                // Force the canvas to scale proportionally instead of stretching
+                canvas.style.width = '100%';
+                canvas.style.height = 'auto'; 
+                canvas.style.maxHeight = '350px'; // Keeps the donut from becoming massive
+                canvas.style.objectFit = 'contain'; 
             });
 
             // Hide UI elements
