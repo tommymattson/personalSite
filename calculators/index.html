@@ -14,14 +14,91 @@
         }
         .page-intro p { font-size: 1.15rem; color: var(--text-secondary); }
 
-        .calc-grid {
+        /* Category sections */
+        .calc-category {
+            margin-bottom: 1.75rem;
+        }
+
+        .category-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.85rem 1rem;
+            background: var(--card-bg);
+            border: 1px solid rgba(0,0,0,0.05);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            cursor: pointer;
+            user-select: none;
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+        .category-header:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px -2px rgba(0,0,0,0.1);
+        }
+
+        .category-icon {
+            width: 40px; height: 40px;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(37,99,235,0.08);
+            border-radius: 10px;
+            flex-shrink: 0;
+        }
+        .category-icon svg {
+            width: 22px; height: 22px;
+            stroke: var(--accent);
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .category-title {
+            flex: 1;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        .category-count {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            background: rgba(0,0,0,0.04);
+            padding: 0.2rem 0.6rem;
+            border-radius: 20px;
+        }
+        .category-chevron {
+            width: 20px; height: 20px;
+            stroke: var(--text-secondary);
+            fill: none;
+            stroke-width: 2.5;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            transition: transform 0.25s ease;
+            flex-shrink: 0;
+        }
+        .calc-category.open .category-chevron {
+            transform: rotate(180deg);
+        }
+
+        .category-body {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 1.5rem; margin-bottom: 4rem;
+            gap: 1.25rem;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.35s ease, padding 0.35s ease, opacity 0.25s ease;
+            opacity: 0;
+            padding: 0 0.25rem;
+        }
+        .calc-category.open .category-body {
+            max-height: 800px;
+            padding: 1.25rem 0.25rem 0.5rem;
+            opacity: 1;
         }
 
         .calc-card {
-            background: var(--card-bg); padding: 2rem;
+            background: var(--card-bg); padding: 1.75rem;
             border-radius: var(--radius); box-shadow: var(--shadow);
             border: 1px solid rgba(0,0,0,0.05);
             transition: transform 0.2s; display: flex;
@@ -31,18 +108,73 @@
 
         .calc-icon {
             font-size: 2rem; margin-bottom: 1rem;
-            width: 52px; height: 52px; display: flex;
+            width: 48px; height: 48px; display: flex;
             align-items: center; justify-content: center;
             background: rgba(37,99,235,0.08); border-radius: 12px;
         }
-        @media (prefers-color-scheme: dark) {
-            .calc-icon { background: rgba(96,165,250,0.12); }
-        }
 
-        .calc-card h3 { margin: 0 0 0.5rem; font-size: 1.2rem; }
-        .calc-card p { color: var(--text-secondary); font-size: 0.92rem; margin: 0 0 1.25rem; flex-grow: 1; }
+        .calc-card h3 { margin: 0 0 0.5rem; font-size: 1.15rem; }
+        .calc-card p { color: var(--text-secondary); font-size: 0.9rem; margin: 0 0 1.25rem; flex-grow: 1; }
         .calc-card .card-link { color: var(--accent); text-decoration: none; font-weight: 600; font-size: 0.9rem; }
         .calc-card .tags { margin-top: 0.75rem; }
+
+        @media (prefers-color-scheme: dark) {
+            .calc-icon { background: rgba(96,165,250,0.12); }
+            .category-icon { background: rgba(96,165,250,0.12); }
+            .category-count { background: rgba(255,255,255,0.06); }
+        }
+
+        /* Jump nav */
+        .jump-nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+        }
+        .jump-nav a {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.4rem 0.85rem;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            background: var(--card-bg);
+            border: 1px solid rgba(0,0,0,0.08);
+            border-radius: 20px;
+            text-decoration: none;
+            transition: all 0.15s;
+        }
+        .jump-nav a:hover {
+            color: var(--accent);
+            border-color: var(--accent);
+            background: rgba(37,99,235,0.04);
+        }
+        .jump-nav a svg {
+            width: 14px; height: 14px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        /* Scroll-margin so anchors clear any sticky header */
+        [id] { scroll-margin-top: 1.5rem; }
+
+        @media (prefers-color-scheme: dark) {
+            .jump-nav a {
+                border-color: rgba(255,255,255,0.1);
+            }
+        }
+
+        @media (max-width: 600px) {
+            .page-intro h1 { font-size: 1.85rem; }
+            .category-body {
+                grid-template-columns: 1fr;
+            }
+            .jump-nav a { font-size: 0.75rem; padding: 0.35rem 0.7rem; }
+        }
     </style>
 </head>
 <body>
@@ -55,117 +187,252 @@
         <p>Interactive tools to help you make smarter decisions — whether you're evaluating a new car, renting out a property, or building a business case for automation.</p>
     </section>
 
-    <div class="calc-grid">
+    <!-- Jump Nav -->
+    <nav class="jump-nav">
+        <a href="#business-operations">
+            <svg viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+            Business Operations
+        </a>
+        <a href="#sales-marketing">
+            <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+            Sales &amp; Marketing
+        </a>
+        <a href="#corporate-finance">
+            <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></svg>
+            Corporate Finance
+        </a>
+        <a href="#personal-finance">
+            <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            Personal Finance
+        </a>
+    </nav>
 
-        <article class="calc-card">
-            <div>
-                <div class="calc-icon">
-                    <svg width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+    <!-- ═══ Business Operations ═══ -->
+    <div class="calc-category open" id="business-operations" onclick="toggleCategory(this)">
+        <div class="category-header">
+            <div class="category-icon">
+                <svg viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+            </div>
+            <span class="category-title">Business Operations</span>
+            <span class="category-count">2 tools</span>
+            <svg class="category-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="category-body" onclick="event.stopPropagation()">
+
+            <article class="calc-card" id="automation-roi">
+                <div>
+                    <div class="calc-icon">
+                        <svg width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+                    </div>
+                    <h3>Task Automation ROI</h3>
+                    <p>Build a business case for automation. Input salary, task time, and investment to find your break-even point and annual savings.</p>
                 </div>
-                <h3>Task Automation ROI</h3>
-                <p>Build a business case for automation. Input salary, task time, and investment to find your break-even point and annual savings.</p>
-            </div>
-            <a href="automation-roi/" class="card-link">Open Calculator →</a>
-            <div class="tags">
-                <span class="tag">Business</span>
-                <span class="tag">ROI</span>
-            </div>
-        </article>
-
-        <article class="calc-card">
-            <div>
-                <div class="calc-icon">
-                    <svg width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+                <a href="automation-roi/" class="card-link">Open Calculator &rarr;</a>
+                <div class="tags">
+                    <span class="tag">Business</span>
+                    <span class="tag">ROI</span>
                 </div>
-                <h3>Customer Lifetime Value</h3>
-                <p>How much is a customer worth? Calculate CLV from purchase frequency, order value, and retention — with what-if scenarios.</p>
-            </div>
-            <a href="customer-ltv/" class="card-link">Open Calculator →</a>
-            <div class="tags">
-                <span class="tag">Sales</span>
-                <span class="tag">Growth</span>
-            </div>
-        </article>
+            </article>
 
-        <article class="calc-card">
-            <div>
-                <div class="calc-icon">
-                    <svg width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <article class="calc-card" id="meeting-cost">
+                <div>
+                    <div class="calc-icon">
+                        <svg width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    </div>
+                    <h3>Meeting Cost</h3>
+                    <p>See the real dollar cost of meetings. Add attendees with hourly rates, set duration and frequency, and reveal hidden spend.</p>
                 </div>
-                <h3>Meeting Cost</h3>
-                <p>See the real dollar cost of meetings. Add attendees with hourly rates, set duration and frequency, and reveal hidden spend.</p>
-            </div>
-            <a href="meeting-cost/" class="card-link">Open Calculator →</a>
-            <div class="tags">
-                <span class="tag">Operations</span>
-                <span class="tag">Time</span>
-            </div>
-        </article>
-
-        <article class="calc-card">
-            <div>
-                <div class="calc-icon">
-                    <svg width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                <a href="meeting-cost/" class="card-link">Open Calculator &rarr;</a>
+                <div class="tags">
+                    <span class="tag">Operations</span>
+                    <span class="tag">Time</span>
                 </div>
-                <h3>Rent My Home</h3>
-                <p>Enter your expected rent and monthly payment to see true cash flow after management fees and a repair reserve.</p>
-            </div>
-            <a href="rent-my-home/" class="card-link">Open Calculator →</a>
-            <div class="tags">
-                <span class="tag">Property</span>
-                <span class="tag">Cash Flow</span>
-            </div>
-        </article>
+            </article>
 
-        <article class="calc-card">
-            <div>
-                <div class="calc-icon">
-                    <svg width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 8h2m2 0h2m2 0h2"/><path d="M7 12h10"/></svg>
-                </div>
-                <h3>Project ROI &amp; CapEx</h3>
-                <p>Build a CFO-ready business case. Enter investment, costs, and benefits to get NPV, IRR, payback, and stress-test your assumptions.</p>
-            </div>
-            <a href="project-roi/" class="card-link">Open Calculator →</a>
-            <div class="tags">
-                <span class="tag">Finance</span>
-                <span class="tag">Strategy</span>
-            </div>
-        </article>
-
-        <article class="calc-card">
-            <div>
-                <div class="calc-icon">
-                    <svg width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/><path d="M8 18h8"/></svg>
-                </div>
-                <h3>Hours-to-Price Builder</h3>
-                <p>Add labor categories with hours and rates, apply burden and margin, tack on fixed fees, and watch the total price update live.</p>
-            </div>
-            <a href="hours-to-price/" class="card-link">Open Calculator →</a>
-            <div class="tags">
-                <span class="tag">Pricing</span>
-                <span class="tag">Proposals</span>
-            </div>
-        </article>
-
-        <article class="calc-card">
-            <div>
-                <div class="calc-icon">
-                    <svg width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M16 8l-4 4-4-4"/><path d="M12 12v6"/></svg>
-                </div>
-                <h3>Gas Savings</h3>
-                <p>Compare fuel costs between your current car and a more efficient one. See break-even date and annual projections.</p>
-            </div>
-            <a href="gas-calculator/" class="card-link">Open Calculator →</a>
-            <div class="tags">
-                <span class="tag">Auto</span>
-                <span class="tag">Finance</span>
-            </div>
-        </article>
-
+        </div>
     </div>
 
+    <!-- ═══ Sales & Marketing ═══ -->
+    <div class="calc-category open" id="sales-marketing" onclick="toggleCategory(this)">
+        <div class="category-header">
+            <div class="category-icon">
+                <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+            </div>
+            <span class="category-title">Sales &amp; Marketing</span>
+            <span class="category-count">2 tools</span>
+            <svg class="category-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="category-body" onclick="event.stopPropagation()">
+
+            <article class="calc-card" id="customer-ltv">
+                <div>
+                    <div class="calc-icon">
+                        <svg width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+                    </div>
+                    <h3>Customer Lifetime Value</h3>
+                    <p>How much is a customer worth? Calculate CLV from purchase frequency, order value, and retention — with what-if scenarios.</p>
+                </div>
+                <a href="customer-ltv/" class="card-link">Open Calculator &rarr;</a>
+                <div class="tags">
+                    <span class="tag">Sales</span>
+                    <span class="tag">Growth</span>
+                </div>
+            </article>
+
+            <article class="calc-card" id="commission-modeler">
+                <div>
+                    <div class="calc-icon">
+                        <svg width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M9 14l2 2 4-4"/></svg>
+                    </div>
+                    <h3>Commission Plan Modeler</h3>
+                    <p>Compare flat, tiered, and accelerator commission structures. Project individual salaries, team comp cost, and company profitability side by side.</p>
+                </div>
+                <a href="commission-modeler/" class="card-link">Open Calculator &rarr;</a>
+                <div class="tags">
+                    <span class="tag">Sales</span>
+                    <span class="tag">Compensation</span>
+                </div>
+            </article>
+
+        </div>
+    </div>
+
+    <!-- ═══ Corporate Finance ═══ -->
+    <div class="calc-category open" id="corporate-finance" onclick="toggleCategory(this)">
+        <div class="category-header">
+            <div class="category-icon">
+                <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 8h2m2 0h2m2 0h2"/><path d="M7 12h10"/></svg>
+            </div>
+            <span class="category-title">Corporate Finance</span>
+            <span class="category-count">2 tools</span>
+            <svg class="category-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="category-body" onclick="event.stopPropagation()">
+
+            <article class="calc-card" id="project-roi">
+                <div>
+                    <div class="calc-icon">
+                        <svg width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 8h2m2 0h2m2 0h2"/><path d="M7 12h10"/></svg>
+                    </div>
+                    <h3>Project ROI &amp; CapEx</h3>
+                    <p>Build a CFO-ready business case. Enter investment, costs, and benefits to get NPV, IRR, payback, and stress-test your assumptions.</p>
+                </div>
+                <a href="project-roi/" class="card-link">Open Calculator &rarr;</a>
+                <div class="tags">
+                    <span class="tag">Finance</span>
+                    <span class="tag">Strategy</span>
+                </div>
+            </article>
+
+            <article class="calc-card" id="hours-to-price">
+                <div>
+                    <div class="calc-icon">
+                        <svg width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/><path d="M8 18h8"/></svg>
+                    </div>
+                    <h3>Hours-to-Price Builder</h3>
+                    <p>Add labor categories with hours and rates, apply burden and margin, tack on fixed fees, and watch the total price update live.</p>
+                </div>
+                <a href="hours-to-price/" class="card-link">Open Calculator &rarr;</a>
+                <div class="tags">
+                    <span class="tag">Pricing</span>
+                    <span class="tag">Proposals</span>
+                </div>
+            </article>
+
+        </div>
+    </div>
+
+    <!-- ═══ Personal Finance ═══ -->
+    <div class="calc-category open" id="personal-finance" onclick="toggleCategory(this)">
+        <div class="category-header">
+            <div class="category-icon">
+                <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            </div>
+            <span class="category-title">Personal Finance</span>
+            <span class="category-count">2 tools</span>
+            <svg class="category-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="category-body" onclick="event.stopPropagation()">
+
+            <article class="calc-card" id="rent-my-home">
+                <div>
+                    <div class="calc-icon">
+                        <svg width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                    </div>
+                    <h3>Rent My Home</h3>
+                    <p>Enter your expected rent and monthly payment to see true cash flow after management fees and a repair reserve.</p>
+                </div>
+                <a href="rent-my-home/" class="card-link">Open Calculator &rarr;</a>
+                <div class="tags">
+                    <span class="tag">Property</span>
+                    <span class="tag">Cash Flow</span>
+                </div>
+            </article>
+
+            <article class="calc-card" id="gas-savings">
+                <div>
+                    <div class="calc-icon">
+                        <svg width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M16 8l-4 4-4-4"/><path d="M12 12v6"/></svg>
+                    </div>
+                    <h3>Gas Savings</h3>
+                    <p>Compare fuel costs between your current car and a more efficient one. See break-even date and annual projections.</p>
+                </div>
+                <a href="gas-calculator/" class="card-link">Open Calculator &rarr;</a>
+                <div class="tags">
+                    <span class="tag">Auto</span>
+                    <span class="tag">Finance</span>
+                </div>
+            </article>
+
+        </div>
+    </div>
+
+    <div style="margin-bottom: 4rem;"></div>
     <my-footer></my-footer>
 </div>
+
+<script>
+function toggleCategory(el) {
+    el.classList.toggle('open');
+}
+
+// Deep-link support: open the right category and scroll to the target
+(function handleHash() {
+    const hash = window.location.hash.slice(1);
+    if (!hash) return;
+    const target = document.getElementById(hash);
+    if (!target) return;
+
+    // If the target is inside a collapsed category, open it
+    const parentCategory = target.closest('.calc-category');
+    if (parentCategory && !parentCategory.classList.contains('open')) {
+        parentCategory.classList.add('open');
+    }
+
+    // Small delay to let the category animation start, then scroll
+    setTimeout(() => {
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+})();
+
+// Also handle clicks on jump-nav links (in case hash doesn't change)
+document.querySelectorAll('.jump-nav a').forEach(link => {
+    link.addEventListener('click', function(e) {
+        const hash = this.getAttribute('href').slice(1);
+        const target = document.getElementById(hash);
+        if (!target) return;
+
+        const parentCategory = target.closest('.calc-category');
+        if (parentCategory && !parentCategory.classList.contains('open')) {
+            parentCategory.classList.add('open');
+        }
+
+        setTimeout(() => {
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+    });
+});
+</script>
 
 </body>
 </html>
