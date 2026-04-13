@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Commission Plan Modeler | Thomas Mattson</title>
+    <link rel="stylesheet" href="../../styles.css">
+    <link rel="stylesheet" href="../calculators.css">
+    <script src="../../main.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <style>
+        /* Rep row grid */
+        .rep-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr auto;
+            gap: 0.75rem;
+            align-items: end;
+            margin-bottom: 0.75rem;
+        }
+        @media (max-width: 600px) {
+            .rep-row {
+                grid-template-columns: 1fr 1fr auto;
+            }
+            .rep-row .form-group:first-child {
+                grid-column: 1 / -1;
+            }
+        }
+
+        /* Tier row grid */
+        .tier-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr auto;
+            gap: 0.75rem;
+            align-items: end;
+            margin-bottom: 0.75rem;
+        }
+        @media (max-width: 600px) {
+            .tier-row {
+                grid-template-columns: 1fr 1fr auto;
+            }
+            .tier-row .form-group:first-child {
+                grid-column: 1 / -1;
+            }
+        }
+
+        /* Plan tabs */
+        .plan-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .plan-tab {
+            flex: 1;
+            min-width: 120px;
+            padding: 0.75rem 1rem;
+            border: 2px solid rgba(0,0,0,0.1);
+            border-radius: 10px;
+            background: var(--card-bg);
+            font-family: 'Inter', system-ui, sans-serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+        .plan-tab:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+        .plan-tab.active {
+            border-color: var(--accent);
+            background: rgba(37,99,235,0.06);
+            color: var(--accent);
+        }
+        @media (prefers-color-scheme: dark) {
+            .plan-tab {
+                border-color: rgba(255,255,255,0.12);
+            }
+            .plan-tab.active {
+                background: rgba(96,165,250,0.12);
+            }
+        }
+
+        /* Plan config sections */
+        .plan-config { display: none; }
+        .plan-config.active { display: block; }
+
+        /* Comparison table wrapper */
+        .comparison-table-wrap {
+            overflow-x: auto;
+            margin-bottom: 2rem;
+        }
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.88rem;
+        }
+        .comparison-table th,
+        .comparison-table td {
+            padding: 0.7rem 0.85rem;
+            text-align: right;
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+        }
+        .comparison-table th:first-child,
+        .comparison-table td:first-child {
+            text-align: left;
+            font-weight: 600;
+        }
+        .comparison-table th {
+            font-weight: 700;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--text-secondary);
+        }
+        .comparison-table .best-val {
+            color: #16a34a;
+            font-weight: 700;
+        }
+        .comparison-table .worst-val {
+            color: #dc2626;
+            font-weight: 700;
+        }
+        .comparison-table .section-header {
+            background: rgba(37,99,235,0.04);
+            font-weight: 700;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--text-secondary);
+        }
+        .comparison-table .total-row {
+            font-weight: 700;
+            border-top: 2px solid var(--accent);
+        }
+        @media (prefers-color-scheme: dark) {
+            .comparison-table th, .comparison-table td {
+                border-bottom-color: rgba(255,255,255,0.08);
+            }
+            .comparison-table .section-header {
+                background: rgba(96,165,250,0.08);
+            }
+        }
+
+        /* Mini-description under plan tabs */
+        .plan-desc {
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            margin-bottom: 1.25rem;
+            padding: 0.75rem 1rem;
+            background: rgba(37,99,235,0.04);
+            border-radius: 8px;
+            border-left: 3px solid var(--accent);
+        }
+        @media (prefers-color-scheme: dark) {
+            .plan-desc {
+                background: rgba(96,165,250,0.06);
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <my-header></my-header>
+    <a href="../" class="back-link">&larr; All Calculators</a>
+
+    <section class="page-intro">
+        <div class="subtitle">Optimize your sales compensation</div>
+        <h1>Commission Plan Modeler</h1>
+        <p>Compare flat, tiered, and accelerator commission structures side by side. Add sales reps with expected revenue to project individual total comp, team cost, and company profitability.</p>
+    </section>
+
+    <div class="calc-form">
+        <!-- Sales Reps -->
+        <div class="form-section-title" style="margin-top:0;border-top:none;padding-top:0;">Sales Representatives</div>
+        <p style="font-size:0.85rem; color:var(--text-secondary); margin-top:-0.25rem; margin-bottom:1rem;">Add each rep with their base salary and expected annual revenue generation.</p>
+
+        <div id="repList">
+            <div class="rep-row">
+                <div class="form-group">
+                    <label>Rep Name</label>
+                    <input type="text" class="rep-name" value="Alice Johnson" placeholder="e.g. Jane Smith">
+                </div>
+                <div class="form-group">
+                    <label>Base Salary ($)</label>
+                    <input type="number" class="rep-base" value="65000" min="0" step="1000">
+                </div>
+                <div class="form-group">
+                    <label>Expected Revenue ($)</label>
+                    <input type="number" class="rep-revenue" value="500000" min="0" step="10000">
+                </div>
+                <button class="remove-task" title="Remove" onclick="removeRep(this)">&times;</button>
+            </div>
+            <div class="rep-row">
+                <div class="form-group">
+                    <label>Rep Name</label>
+                    <input type="text" class="rep-name" value="Bob Martinez" placeholder="e.g. John Doe">
+                </div>
+                <div class="form-group">
+                    <label>Base Salary ($)</label>
+                    <input type="number" class="rep-base" value="60000" min="0" step="1000">
+                </div>
+                <div class="form-group">
+                    <label>Expected Revenue ($)</label>
+                    <input type="number" class="rep-revenue" value="350000" min="0" step="10000">
+                </div>
+                <button class="remove-task" title="Remove" onclick="removeRep(this)">&times;</button>
+            </div>
+            <div class="rep-row">
+                <div class="form-group">
+                    <label>Rep Name</label>
+                    <input type="text" class="rep-name" value="Carlos Lee" placeholder="e.g. Sam Chen">
+                </div>
+                <div class="form-group">
+                    <label>Base Salary ($)</label>
+                    <input type="number" class="rep-base" value="55000" min="0" step="1000">
+                </div>
+                <div class="form-group">
+                    <label>Expected Revenue ($)</label>
+                    <input type="number" class="rep-revenue" value="750000" min="0" step="10000">
+                </div>
+                <button class="remove-task" title="Remove" onclick="removeRep(this)">&times;</button>
+            </div>
+        </div>
+        <button class="add-task-btn" onclick="addRep()">+ Add Sales Rep</button>
+
+        <!-- Company Settings -->
+        <div class="form-section-title">Company Settings</div>
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="grossMargin">Gross Margin on Revenue (%)</label>
+                <div class="label-hint">Company margin before comp costs</div>
+                <input type="number" id="grossMargin" value="60" min="0" max="100" step="1">
+            </div>
+            <div class="form-group">
+                <label for="quota">Annual Quota per Rep ($)</label>
+                <div class="label-hint">Used for tiered &amp; accelerator thresholds</div>
+                <input type="number" id="quota" value="500000" min="0" step="10000">
+            </div>
+        </div>
+
+        <!-- Commission Plans -->
+        <div class="form-section-title">Commission Structures</div>
+        <p style="font-size:0.85rem; color:var(--text-secondary); margin-top:-0.25rem; margin-bottom:1rem;">Configure each plan type below. All three are compared in the results.</p>
+
+        <div class="plan-tabs">
+            <button class="plan-tab active" onclick="switchPlan('flat')">Flat Rate</button>
+            <button class="plan-tab" onclick="switchPlan('tiered')">Tiered</button>
+            <button class="plan-tab" onclick="switchPlan('accelerator')">Accelerator</button>
+        </div>
+
+        <!-- Flat Plan Config -->
+        <div class="plan-config active" id="planFlat">
+            <div class="plan-desc">A single fixed commission rate applied to all revenue regardless of performance.</div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="flatRate">Commission Rate (%)</label>
+                    <div class="label-hint">Applied to all closed revenue</div>
+                    <input type="number" id="flatRate" value="8" min="0" max="100" step="0.5">
+                </div>
+            </div>
+        </div>
+
+        <!-- Tiered Plan Config -->
+        <div class="plan-config" id="planTiered">
+            <div class="plan-desc">Different commission rates apply to different revenue bands. Revenue in each band earns that band's rate.</div>
+            <div id="tierList">
+                <div class="tier-row">
+                    <div class="form-group">
+                        <label>From ($)</label>
+                        <input type="number" class="tier-from" value="0" min="0" step="10000">
+                    </div>
+                    <div class="form-group">
+                        <label>To ($)</label>
+                        <input type="number" class="tier-to" value="250000" min="0" step="10000">
+                    </div>
+                    <div class="form-group">
+                        <label>Rate (%)</label>
+                        <input type="number" class="tier-rate" value="5" min="0" max="100" step="0.5">
+                    </div>
+                    <button class="remove-task" title="Remove" onclick="removeTier(this)">&times;</button>
+                </div>
+                <div class="tier-row">
+                    <div class="form-group">
+                        <label>From ($)</label>
+                        <input type="number" class="tier-from" value="250001" min="0" step="10000">
+                    </div>
+                    <div class="form-group">
+                        <label>To ($)</label>
+                        <input type="number" class="tier-to" value="500000" min="0" step="10000">
+                    </div>
+                    <div class="form-group">
+                        <label>Rate (%)</label>
+                        <input type="number" class="tier-rate" value="8" min="0" max="100" step="0.5">
+                    </div>
+                    <button class="remove-task" title="Remove" onclick="removeTier(this)">&times;</button>
+                </div>
+                <div class="tier-row">
+                    <div class="form-group">
+                        <label>From ($)</label>
+                        <input type="number" class="tier-from" value="500001" min="0" step="10000">
+                    </div>
+                    <div class="form-group">
+                        <label>To ($)</label>
+                        <input type="number" class="tier-to" value="999999999" min="0" step="10000">
+                    </div>
+                    <div class="form-group">
+                        <label>Rate (%)</label>
+                        <input type="number" class="tier-rate" value="12" min="0" max="100" step="0.5">
+                    </div>
+                    <button class="remove-task" title="Remove" onclick="removeTier(this)">&times;</button>
+                </div>
+            </div>
+            <button class="add-task-btn" onclick="addTier()">+ Add Tier</button>
+        </div>
+
+        <!-- Accelerator Plan Config -->
+        <div class="plan-config" id="planAccelerator">
+            <div class="plan-desc">A base rate applies below quota. Once quota is hit, an accelerated (higher) rate kicks in on all revenue above quota.</div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="accelBase">Below-Quota Rate (%)</label>
+                    <div class="label-hint">Rate applied up to quota attainment</div>
+                    <input type="number" id="accelBase" value="6" min="0" max="100" step="0.5">
+                </div>
+                <div class="form-group">
+                    <label for="accelKicker">Above-Quota Rate (%)</label>
+                    <div class="label-hint">Accelerated rate on revenue beyond quota</div>
+                    <input type="number" id="accelKicker" value="12" min="0" max="100" step="0.5">
+                </div>
+            </div>
+        </div>
+
+        <button class="calc-btn" onclick="calculate()">Compare Plans</button>
+    </div>
+
+    <!-- Results -->
+    <div class="results" id="results">
+        <div class="download-bar">
+            <button class="download-btn" onclick="downloadResults()">
+                <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Save as Image
+            </button>
+        </div>
+        <div class="input-summary" id="inputSummary"></div>
+        <div class="results-hero" id="heroCard"></div>
+        <div class="stat-row" id="statRow"></div>
+
+        <div class="chart-card">
+            <h3>Total Comp Cost by Plan</h3>
+            <div class="chart-wrap"><canvas id="compCostChart"></canvas></div>
+        </div>
+
+        <div class="chart-card">
+            <h3>Company Profit After Comp by Plan</h3>
+            <div class="chart-wrap"><canvas id="profitChart"></canvas></div>
+        </div>
+
+        <div class="chart-card">
+            <h3>Per-Rep Total Compensation Comparison</h3>
+            <div class="chart-wrap"><canvas id="repChart"></canvas></div>
+        </div>
+
+        <div class="chart-card">
+            <h3>Commission as % of Revenue by Rep</h3>
+            <div class="chart-wrap"><canvas id="pctChart"></canvas></div>
+        </div>
+
+        <div class="chart-card">
+            <h3>Detailed Breakdown</h3>
+            <div class="comparison-table-wrap">
+                <table class="comparison-table" id="detailTable"></table>
+            </div>
+        </div>
+    </div>
+
+    <my-footer></my-footer>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const fmt = n => '$' + Math.round(n).toLocaleString('en-US');
+const pct = n => n.toFixed(1) + '%';
+const mob = () => window.innerWidth <= 600;
+const cf = s => ({ family: 'Inter', size: mob() ? Math.max(s - 2, 9) : s, weight: 500 });
+
+/* ── Plan tab switching ── */
+function switchPlan(plan) {
+    document.querySelectorAll('.plan-tab').forEach((t, i) => {
+        const plans = ['flat', 'tiered', 'accelerator'];
+        t.classList.toggle('active', plans[i] === plan);
+    });
+    document.querySelectorAll('.plan-config').forEach(c => c.classList.remove('active'));
+    $('plan' + plan.charAt(0).toUpperCase() + plan.slice(1)).classList.add('active');
+}
+
+/* ── Dynamic rep rows ── */
+function addRep() {
+    const row = document.createElement('div');
+    row.className = 'rep-row';
+    row.innerHTML = `
+        <div class="form-group"><label>Rep Name</label>
+            <input type="text" class="rep-name" placeholder="e.g. New Rep"></div>
+        <div class="form-group"><label>Base Salary ($)</label>
+            <input type="number" class="rep-base" value="55000" min="0" step="1000"></div>
+        <div class="form-group"><label>Expected Revenue ($)</label>
+            <input type="number" class="rep-revenue" value="400000" min="0" step="10000"></div>
+        <button class="remove-task" title="Remove" onclick="removeRep(this)">&times;</button>`;
+    $('repList').appendChild(row);
+}
+
+function removeRep(btn) {
+    const row = btn.closest('.rep-row');
+    if (row.parentElement.querySelectorAll('.rep-row').length > 1) row.remove();
+}
+
+/* ── Dynamic tier rows ── */
+function addTier() {
+    const rows = document.querySelectorAll('.tier-row');
+    const lastTo = rows.length > 0 ? (parseFloat(rows[rows.length - 1].querySelector('.tier-to').value) || 0) : 0;
+    const row = document.createElement('div');
+    row.className = 'tier-row';
+    row.innerHTML = `
+        <div class="form-group"><label>From ($)</label>
+            <input type="number" class="tier-from" value="${lastTo + 1}" min="0" step="10000"></div>
+        <div class="form-group"><label>To ($)</label>
+            <input type="number" class="tier-to" value="${lastTo + 250000}" min="0" step="10000"></div>
+        <div class="form-group"><label>Rate (%)</label>
+            <input type="number" class="tier-rate" value="10" min="0" max="100" step="0.5"></div>
+        <button class="remove-task" title="Remove" onclick="removeTier(this)">&times;</button>`;
+    $('tierList').appendChild(row);
+}
+
+function removeTier(btn) {
+    const row = btn.closest('.tier-row');
+    if (row.parentElement.querySelectorAll('.tier-row').length > 1) row.remove();
+}
+
+/* ── Commission calculation helpers ── */
+function calcFlat(revenue) {
+    const rate = (parseFloat($('flatRate').value) || 0) / 100;
+    return revenue * rate;
+}
+
+function calcTiered(revenue) {
+    let commission = 0;
+    document.querySelectorAll('.tier-row').forEach(row => {
+        const from = parseFloat(row.querySelector('.tier-from').value) || 0;
+        const to = parseFloat(row.querySelector('.tier-to').value) || 0;
+        const rate = (parseFloat(row.querySelector('.tier-rate').value) || 0) / 100;
+        if (revenue > from) {
+            const applicable = Math.min(revenue, to) - from;
+            if (applicable > 0) commission += applicable * rate;
+        }
+    });
+    return commission;
+}
+
+function calcAccelerator(revenue) {
+    const quota = parseFloat($('quota').value) || 0;
+    const baseRate = (parseFloat($('accelBase').value) || 0) / 100;
+    const kickerRate = (parseFloat($('accelKicker').value) || 0) / 100;
+    if (revenue <= quota) {
+        return revenue * baseRate;
+    }
+    return (quota * baseRate) + ((revenue - quota) * kickerRate);
+}
+
+/* ── Chart instances ── */
+let ch1 = null, ch2 = null, ch3 = null, ch4 = null;
+
+/* ── Main calculation ── */
+function calculate() {
+    const grossMargin = (parseFloat($('grossMargin').value) || 0) / 100;
+    const quota = parseFloat($('quota').value) || 0;
+
+    // Gather reps
+    const reps = [];
+    document.querySelectorAll('.rep-row').forEach(row => {
+        const name = row.querySelector('.rep-name').value || 'Unnamed Rep';
+        const base = parseFloat(row.querySelector('.rep-base').value) || 0;
+        const revenue = parseFloat(row.querySelector('.rep-revenue').value) || 0;
+        reps.push({ name, base, revenue });
+    });
+
+    // Calculate for each plan
+    const plans = ['Flat Rate', 'Tiered', 'Accelerator'];
+    const calcFns = [calcFlat, calcTiered, calcAccelerator];
+    const planData = plans.map((planName, pi) => {
+        const repResults = reps.map(rep => {
+            const commission = calcFns[pi](rep.revenue);
+            const totalComp = rep.base + commission;
+            const grossProfit = rep.revenue * grossMargin;
+            const netProfit = grossProfit - totalComp;
+            const compPctRevenue = rep.revenue > 0 ? (totalComp / rep.revenue) * 100 : 0;
+            const commPctRevenue = rep.revenue > 0 ? (commission / rep.revenue) * 100 : 0;
+            const attainment = quota > 0 ? (rep.revenue / quota) * 100 : 0;
+            return { ...rep, commission, totalComp, grossProfit, netProfit, compPctRevenue, commPctRevenue, attainment };
+        });
+        const totalRevenue = repResults.reduce((s, r) => s + r.revenue, 0);
+        const totalBase = repResults.reduce((s, r) => s + r.base, 0);
+        const totalCommission = repResults.reduce((s, r) => s + r.commission, 0);
+        const totalComp = repResults.reduce((s, r) => s + r.totalComp, 0);
+        const totalGrossProfit = totalRevenue * grossMargin;
+        const totalNetProfit = totalGrossProfit - totalComp;
+        const avgCompPct = totalRevenue > 0 ? (totalComp / totalRevenue) * 100 : 0;
+        return { planName, repResults, totalRevenue, totalBase, totalCommission, totalComp, totalGrossProfit, totalNetProfit, avgCompPct };
+    });
+
+    // Find cheapest plan
+    const sortedByCost = [...planData].sort((a, b) => a.totalComp - b.totalComp);
+    const cheapest = sortedByCost[0];
+    const savings = sortedByCost[sortedByCost.length - 1].totalComp - cheapest.totalComp;
+
+    // Input summary
+    const repSummary = reps.map(r => r.name + ': ' + fmt(r.base) + ' base, ' + fmt(r.revenue) + ' revenue').join('; ');
+    $('inputSummary').innerHTML = `<h4>Model Inputs</h4><div class="summary-grid">
+        <div class="summary-item"><span class="s-label">Reps</span><span class="s-value">${reps.length}</span></div>
+        <div class="summary-item"><span class="s-label">Gross Margin</span><span class="s-value">${(grossMargin * 100).toFixed(0)}%</span></div>
+        <div class="summary-item"><span class="s-label">Annual Quota</span><span class="s-value">${fmt(quota)}</span></div>
+        <div class="summary-item"><span class="s-label">Flat Rate</span><span class="s-value">${$('flatRate').value}%</span></div>
+        <div class="summary-item"><span class="s-label">Accel Base/Kicker</span><span class="s-value">${$('accelBase').value}% / ${$('accelKicker').value}%</span></div>
+    </div>`;
+
+    // Hero
+    $('heroCard').className = 'results-hero positive';
+    $('heroCard').innerHTML = `
+        <div class="hero-label">Lowest Total Comp Cost</div>
+        <div class="hero-value">${fmt(cheapest.totalComp)}</div>
+        <div class="hero-sub">${cheapest.planName} plan &bull; saves ${fmt(savings)} vs. most expensive option</div>`;
+
+    // Stat cards
+    const totalRev = planData[0].totalRevenue;
+    $('statRow').innerHTML = `
+        <div class="stat-card"><div class="val">${fmt(totalRev)}</div><div class="lbl">Total Team Revenue</div></div>
+        <div class="stat-card"><div class="val">${reps.length}</div><div class="lbl">Sales Reps</div></div>
+        <div class="stat-card"><div class="val green">${fmt(cheapest.totalNetProfit)}</div><div class="lbl">Best Net Profit (${cheapest.planName})</div></div>
+        <div class="stat-card"><div class="val">${pct(cheapest.avgCompPct)}</div><div class="lbl">Comp % of Revenue (${cheapest.planName})</div></div>
+        <div class="stat-card"><div class="val">${fmt(savings)}</div><div class="lbl">Savings (Cheapest vs. Priciest)</div></div>
+        <div class="stat-card"><div class="val">${fmt(quota)}</div><div class="lbl">Annual Quota</div></div>`;
+
+    // Chart setup
+    const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const gridClr = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
+    const txtClr = isDark ? '#d1d5db' : '#6b7280';
+    const mobile = mob();
+    const planColors = ['#2563eb', '#f59e0b', '#8b5cf6'];
+
+    // Chart 1: Total Comp Cost by Plan (bar)
+    if (ch1) ch1.destroy();
+    ch1 = new Chart($('compCostChart'), {
+        type: 'bar',
+        data: {
+            labels: plans,
+            datasets: [
+                { label: 'Total Base Salaries', data: planData.map(p => Math.round(p.totalBase)), backgroundColor: '#94a3b8', borderRadius: 4 },
+                { label: 'Total Commissions', data: planData.map(p => Math.round(p.totalCommission)), backgroundColor: planColors, borderRadius: 4 }
+            ]
+        },
+        options: {
+            responsive: true, aspectRatio: mobile ? 1.2 : 2,
+            plugins: {
+                legend: { position: mobile ? 'bottom' : 'top', labels: { color: txtClr, font: cf(11), boxWidth: 12, padding: 12 } },
+                tooltip: { callbacks: { label: c => c.dataset.label + ': ' + fmt(c.raw) } }
+            },
+            scales: {
+                x: { stacked: true, ticks: { color: txtClr, font: cf(11) }, grid: { display: false } },
+                y: { stacked: true, ticks: { color: txtClr, font: cf(10), callback: v => '$' + (v / 1000).toFixed(0) + 'k' }, grid: { color: gridClr } }
+            }
+        }
+    });
+
+    // Chart 2: Company Profit after Comp
+    if (ch2) ch2.destroy();
+    ch2 = new Chart($('profitChart'), {
+        type: 'bar',
+        data: {
+            labels: plans,
+            datasets: [{
+                label: 'Net Profit After Comp',
+                data: planData.map(p => Math.round(p.totalNetProfit)),
+                backgroundColor: planData.map(p => p.totalNetProfit >= 0 ? '#16a34a' : '#dc2626'),
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true, aspectRatio: mobile ? 1.2 : 2,
+            plugins: {
+                legend: { display: false },
+                tooltip: { callbacks: { label: c => 'Net Profit: ' + fmt(c.raw) } }
+            },
+            scales: {
+                x: { ticks: { color: txtClr, font: cf(11) }, grid: { display: false } },
+                y: { ticks: { color: txtClr, font: cf(10), callback: v => '$' + (v / 1000).toFixed(0) + 'k' }, grid: { color: gridClr } }
+            }
+        }
+    });
+
+    // Chart 3: Per-rep total comp comparison (grouped bar)
+    if (ch3) ch3.destroy();
+    ch3 = new Chart($('repChart'), {
+        type: 'bar',
+        data: {
+            labels: reps.map(r => r.name),
+            datasets: plans.map((p, i) => ({
+                label: p,
+                data: planData[i].repResults.map(r => Math.round(r.totalComp)),
+                backgroundColor: planColors[i],
+                borderRadius: 4
+            }))
+        },
+        options: {
+            responsive: true, aspectRatio: mobile ? 1.1 : 2,
+            indexAxis: mobile && reps.length > 4 ? 'y' : 'x',
+            plugins: {
+                legend: { position: mobile ? 'bottom' : 'top', labels: { color: txtClr, font: cf(11), boxWidth: 12, padding: 12 } },
+                tooltip: { callbacks: { label: c => c.dataset.label + ': ' + fmt(c.raw) } }
+            },
+            scales: {
+                x: { ticks: { color: txtClr, font: cf(10), maxRotation: mobile ? 45 : 0 }, grid: { display: false } },
+                y: { ticks: { color: txtClr, font: cf(10), callback: v => typeof v === 'number' ? '$' + (v / 1000).toFixed(0) + 'k' : v }, grid: { color: gridClr } }
+            }
+        }
+    });
+
+    // Chart 4: Commission as % of Revenue (line per plan across reps)
+    if (ch4) ch4.destroy();
+    ch4 = new Chart($('pctChart'), {
+        type: 'line',
+        data: {
+            labels: reps.map(r => r.name),
+            datasets: plans.map((p, i) => ({
+                label: p,
+                data: planData[i].repResults.map(r => parseFloat(r.commPctRevenue.toFixed(1))),
+                borderColor: planColors[i],
+                backgroundColor: planColors[i] + '18',
+                fill: false,
+                tension: 0.3,
+                pointRadius: mobile ? 4 : 6,
+                pointBackgroundColor: planColors[i],
+                borderWidth: 2.5
+            }))
+        },
+        options: {
+            responsive: true, aspectRatio: mobile ? 1.2 : 2,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: { position: mobile ? 'bottom' : 'top', labels: { color: txtClr, font: cf(11), boxWidth: 12, padding: 12 } },
+                tooltip: { callbacks: { label: c => c.dataset.label + ': ' + c.raw + '%' } }
+            },
+            scales: {
+                x: { ticks: { color: txtClr, font: cf(10) }, grid: { display: false } },
+                y: { ticks: { color: txtClr, font: cf(10), callback: v => v + '%' }, grid: { color: gridClr }, beginAtZero: true }
+            }
+        }
+    });
+
+    // Detailed comparison table
+    let html = `<thead><tr>
+        <th></th><th>Flat Rate</th><th>Tiered</th><th>Accelerator</th>
+    </tr></thead><tbody>`;
+
+    // Per-rep section
+    reps.forEach((rep, ri) => {
+        html += `<tr class="section-header"><td colspan="4">${rep.name} &mdash; ${fmt(rep.revenue)} revenue (${planData[0].repResults[ri].attainment.toFixed(0)}% quota)</td></tr>`;
+
+        const comms = planData.map(p => p.repResults[ri].commission);
+        const minComm = Math.min(...comms);
+        const maxComm = Math.max(...comms);
+        html += `<tr><td>Commission</td>${comms.map(c => {
+            const cls = c === minComm && minComm !== maxComm ? 'best-val' : c === maxComm && minComm !== maxComm ? 'worst-val' : '';
+            return `<td class="${cls}">${fmt(c)}</td>`;
+        }).join('')}</tr>`;
+
+        const totals = planData.map(p => p.repResults[ri].totalComp);
+        const minTotal = Math.min(...totals);
+        const maxTotal = Math.max(...totals);
+        html += `<tr><td>Total Comp</td>${totals.map(t => {
+            const cls = t === minTotal && minTotal !== maxTotal ? 'best-val' : t === maxTotal && minTotal !== maxTotal ? 'worst-val' : '';
+            return `<td class="${cls}">${fmt(t)}</td>`;
+        }).join('')}</tr>`;
+
+        const nets = planData.map(p => p.repResults[ri].netProfit);
+        const maxNet = Math.max(...nets);
+        const minNet = Math.min(...nets);
+        html += `<tr><td>Net Profit</td>${nets.map(n => {
+            const cls = n === maxNet && minNet !== maxNet ? 'best-val' : n === minNet && minNet !== maxNet ? 'worst-val' : '';
+            return `<td class="${cls}">${fmt(n)}</td>`;
+        }).join('')}</tr>`;
+    });
+
+    // Team totals
+    html += `<tr class="section-header"><td colspan="4">Team Totals</td></tr>`;
+
+    const teamComps = planData.map(p => p.totalComp);
+    const minTeamComp = Math.min(...teamComps);
+    const maxTeamComp = Math.max(...teamComps);
+    html += `<tr class="total-row"><td>Total Comp Cost</td>${teamComps.map(c => {
+        const cls = c === minTeamComp && minTeamComp !== maxTeamComp ? 'best-val' : c === maxTeamComp && minTeamComp !== maxTeamComp ? 'worst-val' : '';
+        return `<td class="${cls}">${fmt(c)}</td>`;
+    }).join('')}</tr>`;
+
+    const teamCommissions = planData.map(p => p.totalCommission);
+    html += `<tr><td>Total Commissions</td>${teamCommissions.map(c => `<td>${fmt(c)}</td>`).join('')}</tr>`;
+
+    const teamProfits = planData.map(p => p.totalNetProfit);
+    const maxTeamProfit = Math.max(...teamProfits);
+    const minTeamProfit = Math.min(...teamProfits);
+    html += `<tr class="total-row"><td>Net Profit After Comp</td>${teamProfits.map(p => {
+        const cls = p === maxTeamProfit && minTeamProfit !== maxTeamProfit ? 'best-val' : p === minTeamProfit && minTeamProfit !== maxTeamProfit ? 'worst-val' : '';
+        return `<td class="${cls}">${fmt(p)}</td>`;
+    }).join('')}</tr>`;
+
+    const teamPcts = planData.map(p => p.avgCompPct);
+    html += `<tr><td>Comp % of Revenue</td>${teamPcts.map(p => `<td>${pct(p)}</td>`).join('')}</tr>`;
+
+    html += '</tbody>';
+    $('detailTable').innerHTML = html;
+
+    $('results').classList.add('visible');
+    $('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') calculate(); });
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script>
+function downloadResults() {
+    const el = document.getElementById('results');
+    const btn = document.querySelector('.download-btn');
+    btn.textContent = 'Capturing\u2026';
+    btn.disabled = true;
+
+    const lightTxt = '#6b7280', lightGrid = 'rgba(0,0,0,0.06)';
+    const savedCharts = [];
+    Object.values(Chart.instances).forEach(chart => {
+        const snap = {};
+        Object.entries(chart.options.scales || {}).forEach(([k, sc]) => {
+            snap[k] = { tick: sc.ticks?.color, grid: sc.grid?.color };
+            if (sc.ticks) sc.ticks.color = lightTxt;
+            if (sc.grid)  sc.grid.color  = lightGrid;
+        });
+        const leg = chart.options.plugins?.legend?.labels;
+        if (leg) { snap._leg = leg.color; leg.color = lightTxt; }
+        savedCharts.push({ chart, snap });
+        chart.update('none');
+    });
+
+    html2canvas(el, {
+        backgroundColor: '#ffffff',
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        width: 1000,
+        windowWidth: 1200,
+        onclone: (clonedDoc) => {
+            const clone = clonedDoc.getElementById('results');
+            clone.style.width = '1000px';
+            clone.style.maxWidth = '1000px';
+            clone.style.margin = '0 auto';
+            clone.style.padding = '30px';
+            clone.style.boxSizing = 'border-box';
+            clone.style.animation = 'none';
+            clone.style.transition = 'none';
+            clone.style.opacity = '1';
+            clone.style.transform = 'none';
+
+            const hero = clone.querySelector('.results-hero, .hero-card, .cashflow-hero');
+            if (hero) {
+                hero.style.boxShadow = 'none';
+                if (hero.classList.contains('positive')) hero.style.background = '#16a34a';
+                else if (hero.classList.contains('negative') || hero.classList.contains('red')) hero.style.background = '#dc2626';
+                else hero.style.background = '#2563eb';
+                hero.style.color = '#ffffff';
+            }
+
+            clone.style.color = '#111827';
+            clone.querySelectorAll('.stat-card, .chart-card').forEach(card => {
+                card.style.background = '#ffffff';
+                card.style.borderColor = '#e5e7eb';
+                card.style.opacity = '1';
+            });
+
+            const dlBar = clone.querySelector('.download-bar');
+            if (dlBar) dlBar.style.display = 'none';
+            const summary = clone.querySelector('.input-summary');
+            if (summary) summary.style.display = 'block';
+        }
+    })
+    .then(canvas => {
+        const a = document.createElement('a');
+        a.download = 'commission-plan-comparison.png';
+        a.href = canvas.toDataURL('image/png');
+        a.click();
+    })
+    .finally(() => {
+        savedCharts.forEach(({ chart, snap }) => {
+            Object.entries(chart.options.scales || {}).forEach(([k, sc]) => {
+                if (snap[k]) {
+                    if (sc.ticks) sc.ticks.color = snap[k].tick;
+                    if (sc.grid)  sc.grid.color  = snap[k].grid;
+                }
+            });
+            const leg = chart.options.plugins?.legend?.labels;
+            if (leg && snap._leg !== undefined) leg.color = snap._leg;
+            chart.update('none');
+        });
+        btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Save as Image';
+        btn.disabled = false;
+    });
+}
+</script>
+
+</body>
+</html>
