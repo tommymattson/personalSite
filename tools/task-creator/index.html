@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Estimator</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+    <style>
+        :root {
+            --slds-brand: #0176d3;
+            --slds-brand-hover: #014486;
+            --slds-border: #dddbda;
+            --slds-text: #080707;
+            --slds-label: #3e3e3c;
+            --slds-bg: #f3f2f2;
+            --slds-warning: #ffb75d;
+            --slds-warning-text: #b3690b;
+            --slds-danger: #ea001e;
+        }
+        body {
+            font-family: "Salesforce Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            color: var(--slds-text);
+            background: #fafaf9;
+            margin: 0;
+            padding: 2rem;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border: 1px solid var(--slds-border);
+            border-radius: 0.25rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            padding: 2rem;
+        }
+        h2 { font-size: 1.25rem; margin-top: 0; margin-bottom: 1.5rem; color: var(--slds-brand); border-bottom: 2px solid var(--slds-bg); padding-bottom: 0.5rem; }
+        section { margin-bottom: 3.5rem; }
+        
+        /* Grid Layouts */
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 1rem; }
+        .grid-full { grid-column: 1 / -1; }
+        
+        /* Form Controls */
+        label { display: block; font-size: 0.75rem; font-weight: 700; color: var(--slds-label); margin-bottom: 0.35rem; }
+        input[type="text"], input[type="number"], input[type="date"], select, textarea {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--slds-border);
+            border-radius: 0.25rem;
+            font-size: 0.875rem;
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+        textarea { resize: vertical; min-height: 80px; }
+        input:focus, select:focus, textarea:focus {
+            outline: none; border-color: var(--slds-brand); box-shadow: 0 0 3px var(--slds-brand);
+        }
+        input:read-only { background-color: var(--slds-bg); color: #706e6b; cursor: not-allowed; }
+
+        /* Table */
+        table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        th, td { padding: 0.75rem 0.5rem; border: 1px solid var(--slds-border); vertical-align: top; }
+        th { text-align: left; background: var(--slds-bg); font-size: 0.75rem; color: var(--slds-label); font-weight: 700; }
+        td:nth-child(1) { width: 100px; font-weight: 600; font-size: 0.875rem; vertical-align: middle; }
+        td:nth-child(2) { width: 160px; }
+        td:nth-child(3) { width: 100px; }
+        td:nth-child(4) { width: 180px; }
+        .warning-text { color: var(--slds-warning-text); font-size: 0.75rem; margin-top: 0.4rem; font-weight: 600; display: block; }
+        
+        /* Totals Block */
+        .totals-grid { display: grid; grid-template-columns: 200px 1fr; gap: 1rem; align-items: center; max-width: 400px; margin-bottom: 2rem; }
+        .totals-label { font-size: 0.875rem; font-weight: 700; color: var(--slds-label); }
+        .totals-value { font-size: 1rem; font-weight: 600; }
+        .pm-input-wrapper { display: flex; align-items: center; gap: 0.5rem; }
+        .pm-input-wrapper input { width: 80px; }
+        
+        /* Buttons */
+        .button-group { display: flex; gap: 1rem; flex-wrap: wrap; border-top: 1px solid var(--slds-border); padding-top: 1.5rem; }
+        .btn { padding: 0.5rem 1rem; border-radius: 0.25rem; font-size: 0.875rem; cursor: pointer; border: 1px solid transparent; font-weight: 600; transition: all 0.2s; }
+        .btn-primary { background: var(--slds-brand); color: white; }
+        .btn-primary:hover { background: var(--slds-brand-hover); }
+        .btn-outline { background: white; border-color: var(--slds-border); color: var(--slds-brand); }
+        .btn-outline:hover { background: var(--slds-bg); }
+        .btn-danger { color: var(--slds-danger); border-color: var(--slds-border); background: white; margin-left: auto; }
+        .btn-danger:hover { background: #f3f2f2; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+
+        const STAGES = ['Discover', 'Prototype', 'Develop', 'Test', 'Deploy'];
+
+        const getTeamMembers = () => {
+            const params = new URLSearchParams(window.location.search);
+            const teamParam = params.get('team');
+            if (!teamParam) return null;
+            
+            const members = teamParam.split(',')
+                .map(n => decodeURIComponent(n).trim())
+                .filter(n => n);
+            
+            return members.length > 0 ? [...new Set(members)] : null;
+        };
+
+        const getToday = () => new Date().toISOString().split('T')[0];
+
+        const getDefaultState = () => ({
+            context: {
+                milestone: '',
+                taskName: '',
+                devEnv: '',
+                businessGoal: '',
+                problem: '',
+                deliverable: '',
+                startDate: getToday()
+            },
+            discoverEdited: false,
+            stages: STAGES.map(name => ({
+                name,
+                dueDate: getToday(),
+                hours: '',
+                person: '',
+                isOther: false
+            })),
+            pmPercent: 25
+        });
+
+        const App = () => {
+            const teamMembers = useMemo(() => getTeamMembers(), []);
+            
+            const [state, setState] = useState(() => {
+                const saved = localStorage.getItem('taskEstimatorState');
+                if (saved) {
+                    try { return JSON.parse(saved); } catch (e) { console.error('Failed to parse local storage', e); }
+                }
+                return getDefaultState();
+            });
+
+            useEffect(() => {
+                localStorage.setItem('taskEstimatorState', JSON.stringify(state));
+            }, [state]);
+
+            const updateContext = (field, value) => {
+                setState(prev => {
+                    const newState = { ...prev, context: { ...prev.context, [field]: value } };
+                    
+                    if (field === 'startDate' && !prev.discoverEdited) {
+                        newState.stages = [...prev.stages];
+                        newState.stages[0] = { ...newState.stages[0], dueDate: value };
+                    }
+                    return newState;
+                });
+            };
+
+            const updateStage = (index, field, value) => {
+                setState(prev => {
+                    const newState = { ...prev, stages: [...prev.stages] };
+                    newState.stages[index] = { ...newState.stages[index], [field]: value };
+                    
+                    if (index === 0 && field === 'dueDate') {
+                        newState.discoverEdited = true;
+                    }
+                    return newState;
+                });
+            };
+
+            const handlePersonChange = (index, value) => {
+                if (value === '---OTHER---') {
+                    setState(prev => {
+                        const newState = { ...prev, stages: [...prev.stages] };
+                        newState.stages[index] = { ...newState.stages[index], isOther: true, person: '' };
+                        return newState;
+                    });
+                } else {
+                    updateStage(index, 'person', value);
+                }
+            };
+
+            const generateTaskName = (stageName) => {
+                const { milestone, taskName, devEnv } = state.context;
+                const ms = milestone || 'Milestone';
+                const tn = taskName || 'Task Name';
+                const env = stageName === 'Deploy' ? 'Production' : (devEnv || 'Sandbox');
+                return `(${ms}) ${stageName}: ${tn} (${env})`;
+            };
+
+            // Totals Calculation
+            const subtotal = state.stages.reduce((sum, stage) => sum + (parseFloat(stage.hours) || 0), 0);
+            const pmOverhead = subtotal * ((parseFloat(state.pmPercent) || 0) / 100);
+            const totalHours = subtotal + pmOverhead;
+
+            // Warnings
+            const getRowWarning = (index) => {
+                if (index === 0) return null;
+                const current = new Date(state.stages[index].dueDate);
+                const prev = new Date(state.stages[index - 1].dueDate);
+                if (current < prev) {
+                    return `Soft Warning: ${state.stages[index].name} date is before ${state.stages[index - 1].name} date.`;
+                }
+                return null;
+            };
+
+            const checkExports = () => {
+                if (totalHours === 0) {
+                    alert("Total Hours is 0. Please add estimates before exporting.");
+                    return false;
+                }
+                return true;
+            };
+
+            // Export Actions
+            const handleCopyTasks = () => {
+                if (!checkExports()) return;
+                const tasks = state.stages.map(s => generateTaskName(s.name)).join('\n');
+                navigator.clipboard.writeText(tasks).then(() => alert('Tasks copied to clipboard!'));
+            };
+
+            const handleCopyTable = () => {
+                if (!checkExports()) return;
+                const headers = ['Stage', 'Due Date', 'Hours', 'Person', 'Task Name'].join('\t');
+                const rows = state.stages.map(s => 
+                    [s.name, s.dueDate, parseFloat(s.hours) || 0, s.person, generateTaskName(s.name)].join('\t')
+                );
+                const tableStr = [headers, ...rows].join('\n');
+                navigator.clipboard.writeText(tableStr).then(() => alert('Table copied to clipboard!'));
+            };
+
+            const handleDownloadJSON = () => {
+                if (!checkExports()) return;
+                const payload = {
+                    context: state.context,
+                    stages: state.stages.map(s => ({ ...s, generatedName: generateTaskName(s.name) })),
+                    totals: { subtotal, pmOverhead, totalHours }
+                };
+                const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `Task-Estimator-${state.context.taskName || 'Export'}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+            };
+
+            const handleReset = () => {
+                if (confirm('Are you sure you want to clear the form? This cannot be undone.')) {
+                    setState(getDefaultState());
+                    localStorage.removeItem('taskEstimatorState');
+                }
+            };
+
+            return (
+                <div className="container">
+                    {/* SECTION 1: Task Context */}
+                    <section id="task-context">
+                        <h2>1. Task Context</h2>
+                        <div className="grid">
+                            <div>
+                                <label>Milestone Name</label>
+                                <input type="text" placeholder="e.g., Lead Mgmt" value={state.context.milestone} onChange={(e) => updateContext('milestone', e.target.value)} />
+                            </div>
+                            <div>
+                                <label>Task Name</label>
+                                <input type="text" placeholder="e.g., Web-to-Lead Form" value={state.context.taskName} onChange={(e) => updateContext('taskName', e.target.value)} />
+                            </div>
+                            <div>
+                                <label>Dev Environment Name</label>
+                                <input type="text" placeholder="e.g., FullCopy1" value={state.context.devEnv} onChange={(e) => updateContext('devEnv', e.target.value)} />
+                            </div>
+                            <div>
+                                <label>Start Date</label>
+                                <input type="date" value={state.context.startDate} onChange={(e) => updateContext('startDate', e.target.value)} />
+                            </div>
+                            <div className="grid-full">
+                                <label>Business Goal (What benefit does the business get from this?)</label>
+                                <textarea value={state.context.businessGoal} onChange={(e) => updateContext('businessGoal', e.target.value)} />
+                            </div>
+                            <div className="grid-full">
+                                <label>Problem (What's keeping them from the goal?)</label>
+                                <textarea value={state.context.problem} onChange={(e) => updateContext('problem', e.target.value)} />
+                            </div>
+                            <div className="grid-full">
+                                <label>Deliverable (What do we need to give the business to help them reach their goal?)</label>
+                                <textarea value={state.context.deliverable} onChange={(e) => updateContext('deliverable', e.target.value)} />
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* SECTION 2: Stage Estimates Table */}
+                    <section id="stage-estimates">
+                        <h2>2. Stage Estimates</h2>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Stage</th>
+                                    <th>Due Date</th>
+                                    <th>Hours Estimate</th>
+                                    <th>Person</th>
+                                    <th>Generated Task Name</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {state.stages.map((stage, index) => {
+                                    const warning = getRowWarning(index);
+                                    return (
+                                        <tr key={stage.name}>
+                                            <td>{stage.name}</td>
+                                            <td>
+                                                <input type="date" value={stage.dueDate} onChange={(e) => updateStage(index, 'dueDate', e.target.value)} />
+                                                {warning && <span className="warning-text">{warning}</span>}
+                                            </td>
+                                            <td>
+                                                <input type="number" min="0" step="0.25" value={stage.hours} onChange={(e) => updateStage(index, 'hours', e.target.value)} />
+                                            </td>
+                                            <td>
+                                                {teamMembers && !stage.isOther ? (
+                                                    <select value={stage.person} onChange={(e) => handlePersonChange(index, e.target.value)}>
+                                                        <option value=""></option>
+                                                        {teamMembers.map(m => <option key={m} value={m}>{m}</option>)}
+                                                        <option value="---OTHER---">— Other —</option>
+                                                    </select>
+                                                ) : (
+                                                    <input type="text" placeholder="Name or initials" value={stage.person} onChange={(e) => updateStage(index, 'person', e.target.value)} />
+                                                )}
+                                            </td>
+                                            <td>
+                                                <input type="text" readOnly value={generateTaskName(stage.name)} />
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </section>
+
+                    {/* SECTION 3: Totals & Export */}
+                    <section id="totals-export">
+                        <h2>3. Totals & Export</h2>
+                        
+                        <div className="totals-grid">
+                            <div className="totals-label">Subtotal (stage hours):</div>
+                            <div className="totals-value">{subtotal.toFixed(2)} hrs</div>
+                            
+                            <div className="totals-label">PM Overhead:</div>
+                            <div className="pm-input-wrapper">
+                                <input type="number" min="0" step="1" value={state.pmPercent} onChange={(e) => setState(p => ({...p, pmPercent: e.target.value}))} />
+                                <span>% = {(pmOverhead).toFixed(2)} hrs</span>
+                            </div>
+                            
+                            <div className="totals-label" style={{color: 'var(--slds-brand)', fontSize: '1rem'}}>Total Estimated Hours:</div>
+                            <div className="totals-value" style={{color: 'var(--slds-brand)', fontSize: '1.25rem'}}>{totalHours.toFixed(2)} hrs</div>
+                        </div>
+
+                        <div className="button-group">
+                            <button className="btn btn-primary" onClick={handleCopyTasks}>Copy All Tasks</button>
+                            <button className="btn btn-outline" onClick={handleCopyTable}>Copy as Table</button>
+                            <button className="btn btn-outline" onClick={handleDownloadJSON}>Download JSON</button>
+                            <button className="btn btn-danger" onClick={handleReset}>Reset</button>
+                        </div>
+                    </section>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
