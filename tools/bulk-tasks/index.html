@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bulk Task Builder</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        :root {
+            --primary: #0052cc;
+            --primary-hover: #0043a6;
+            --danger: #de350b;
+            --border: #dfe1e6;
+            --bg: #f4f5f7;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            color: #172b4d;
+            max-width: 900px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            line-height: 1.5;
+        }
+        h1, h2, h3 { margin-top: 0; }
+        
+        /* Layout Sections */
+        .section {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        /* Form Elements */
+        label { display: block; font-weight: 600; margin-bottom: 0.25rem; font-size: 0.9rem; }
+        input[type="text"] {
+            width: 100%;
+            padding: 0.5rem;
+            border: 2px solid var(--border);
+            border-radius: 4px;
+            font-size: 1rem;
+            box-sizing: border-box;
+            transition: border-color 0.2s;
+        }
+        input[type="text"]:focus { outline: none; border-color: var(--primary); }
+        .input-group { margin-bottom: 1rem; }
+        
+        /* Milestones & Items */
+        .milestone-block {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .milestone-header { 
+            display: flex; 
+            gap: 1rem; 
+            align-items: flex-start; 
+            margin-bottom: 1rem; 
+        }
+        .milestone-header > div { flex-grow: 1; }
+        
+        /* NEW: Milestone visual distinction */
+        .milestone-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #5e6c84;
+            margin-bottom: 0.25rem;
+            display: block;
+            font-weight: 700;
+        }
+        .milestone-input {
+            font-weight: 600;
+            font-size: 1.05rem !important;
+            background-color: white;
+        }
+        
+        /* NEW: Nested task visual tree */
+        .items-container { 
+            padding-left: 1.5rem; 
+            position: relative;
+        }
+        .items-container::before {
+            content: '';
+            position: absolute;
+            left: 0.5rem;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #c1c7d0;
+            border-radius: 2px;
+        }
+        .item-row { display: flex; gap: 0.5rem; margin-bottom: 0.5rem; }
+        .item-row > input { flex-grow: 1; }
+
+        /* Buttons */
+        button {
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: background-color 0.2s;
+        }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-hover); }
+        .btn-primary:disabled { background: #a5adba; cursor: not-allowed; }
+        .btn-secondary { background: white; border-color: var(--border); color: #42526e; }
+        .btn-secondary:hover { background: var(--bg); }
+        .btn-icon { padding: 0.5rem 0.75rem; background: transparent; border: 1px solid var(--border); color: #42526e;}
+        .btn-icon:hover { background: #ffebe6; color: var(--danger); border-color: #ffbdad; }
+        
+        /* Preview & Export */
+        .preview-pane {
+            background: #282a36;
+            color: #f8f8f2;
+            padding: 1rem;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-family: 'Courier New', Courier, monospace;
+            min-height: 100px;
+            margin-bottom: 1rem;
+        }
+        .export-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; }
+        
+        /* Feedback text */
+        .warning-text { color: var(--danger); font-size: 0.85rem; margin-top: 0.25rem; font-weight: 500; }
+        .info-text { color: #5e6c84; font-size: 0.85rem; margin-top: 0.5rem; font-style: italic; }
+        .item-count { font-weight: 600; color: #42526e; margin-left: auto; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        const App = () => {
+            const [email, setEmail] = useState('');
+            const [listName, setListName] = useState('');
+            const [milestones, setMilestones] = useState([{ id: Date.now(), name: '', items: [{ id: Date.now() + 1, name: '' }] }]);
+            const [loaded, setLoaded] = useState(false);
+            const [focusTarget, setFocusTarget] = useState(null);
+
+            useEffect(() => {
+                const params = new URLSearchParams(window.location.search);
+                const fresh = params.get('fresh');
+                const urlEmail = params.get('BC_email');
+                const urlList = params.get('BC_todolist');
+
+                let parsedState = null;
+                if (fresh === '1') {
+                    localStorage.removeItem('bulkTaskBuilderState');
+                } else {
+                    const saved = localStorage.getItem('bulkTaskBuilderState');
+                    if (saved) parsedState = JSON.parse(saved);
+                }
+
+                if (parsedState) {
+                    setEmail(urlEmail || parsedState.email || '');
+                    setListName(urlList || parsedState.listName || '');
+                    if (parsedState.milestones && parsedState.milestones.length > 0) {
+                        setMilestones(parsedState.milestones);
+                    }
+                } else {
+                    if (urlEmail) setEmail(urlEmail);
+                    if (urlList) setListName(urlList);
+                }
+                setLoaded(true);
+            }, []);
+
+            useEffect(() => {
+                if (loaded) {
+                    localStorage.setItem('bulkTaskBuilderState', JSON.stringify({ email, listName, milestones }));
+                }
+            }, [email, listName, milestones, loaded]);
+
+            useEffect(() => {
+                if (focusTarget) {
+                    const el = document.getElementById(focusTarget);
+                    if (el) el.focus();
+                    setFocusTarget(null);
+                }
+            }, [focusTarget]);
+
+            const addMilestone = () => {
+                const newId = Date.now();
+                setMilestones([...milestones, { id: newId, name: '', items: [{ id: newId + 1, name: '' }] }]);
+                setFocusTarget(`m-name-${newId}`);
+            };
+
+            const removeMilestone = (mId) => {
+                setMilestones(milestones.filter(m => m.id !== mId));
+            };
+
+            const updateMilestoneName = (mId, newName) => {
+                setMilestones(milestones.map(m => m.id === mId ? { ...m, name: newName } : m));
+            };
+
+            const addItem = (mId) => {
+                const newItemId = Date.now();
+                setMilestones(milestones.map(m => {
+                    if (m.id === mId) {
+                        return { ...m, items: [...m.items, { id: newItemId, name: '' }] };
+                    }
+                    return m;
+                }));
+                setFocusTarget(`i-name-${newItemId}`);
+            };
+
+            const removeItem = (mId, iId) => {
+                setMilestones(milestones.map(m => {
+                    if (m.id === mId) {
+                        return { ...m, items: m.items.filter(i => i.id !== iId) };
+                    }
+                    return m;
+                }));
+            };
+
+            const updateItemName = (mId, iId, newName) => {
+                setMilestones(milestones.map(m => {
+                    if (m.id === mId) {
+                        return { ...m, items: m.items.map(i => i.id === iId ? { ...i, name: newName } : i) };
+                    }
+                    return m;
+                }));
+            };
+
+            const handleReset = () => {
+                if (window.confirm("Are you sure you want to clear all data? This cannot be undone.")) {
+                    setEmail('');
+                    setListName('');
+                    setMilestones([{ id: Date.now(), name: '', items: [{ id: Date.now() + 1, name: '' }] }]);
+                }
+            };
+
+            let validItemCount = 0;
+            let validMilestoneCount = 0;
+            const previewLines = [];
+
+            milestones.forEach(m => {
+                const hasValidItems = m.items.some(i => i.name.trim() !== '');
+                if (hasValidItems) validMilestoneCount++;
+
+                const mName = m.name.trim() || 'Milestone';
+                m.items.forEach(i => {
+                    if (i.name.trim()) {
+                        previewLines.push(`* (${mName}) ${i.name.trim()}`);
+                        validItemCount++;
+                    }
+                });
+            });
+
+            const previewText = previewLines.join('\n');
+            const isEmailInvalid = email.length > 0 && !email.includes('@');
+            const isListInvalid = listName.trim() === '';
+            const isUrlTooLong = previewText.length > 1800;
+
+            const openGmailDraft = () => {
+                const subject = `Todo list: ${listName}`;
+                const url = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(email)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(previewText)}`;
+                window.open(url, '_blank');
+            };
+
+            const copyBody = () => {
+                navigator.clipboard.writeText(previewText);
+                alert("Email body copied to clipboard!");
+            };
+
+            const copyLink = () => {
+                const url = new URL(window.location.href);
+                url.searchParams.set('BC_email', email);
+                url.searchParams.set('BC_todolist', listName);
+                navigator.clipboard.writeText(url.toString());
+                alert("Shareable link copied! (Preserves email and list name)");
+            };
+
+            if (!loaded) return <div>Loading...</div>;
+
+            return (
+                <div>
+                    <h1>Bulk Task Builder</h1>
+                    
+                    {/* SECTION 1: HEADER SETTINGS */}
+                    <div className="section">
+                        <h2>1. Header Settings</h2>
+                        <div className="input-group">
+                            <label>Basecamp Project Email</label>
+                            <input 
+                                type="text" 
+                                value={email} 
+                                onChange={(e) => setEmail(e.target.value)} 
+                                placeholder="e.g., project+abc123@basecamp.com" 
+                            />
+                            {isEmailInvalid && <div className="warning-text">Warning: Basecamp Email appears malformed (missing '@').</div>}
+                        </div>
+                        <div className="input-group">
+                            <label>Todo List Name</label>
+                            <input 
+                                type="text" 
+                                value={listName} 
+                                onChange={(e) => setListName(e.target.value)} 
+                                placeholder="e.g., Q2 Sprint" 
+                            />
+                            {isListInvalid && <div className="warning-text">Warning: Todo List Name is required.</div>}
+                        </div>
+                    </div>
+
+                    {/* SECTION 2: BUILDER */}
+                    <div className="section">
+                        <h2>2. Milestones + Items Builder</h2>
+                        {milestones.map((m, mIndex) => (
+                            <div key={m.id} className="milestone-block">
+                                <div className="milestone-header">
+                                    <div style={{ width: '100%' }}>
+                                        <label htmlFor={`m-name-${m.id}`} className="milestone-label">Milestone Name</label>
+                                        <input 
+                                            id={`m-name-${m.id}`}
+                                            className="milestone-input"
+                                            type="text" 
+                                            value={m.name} 
+                                            onChange={(e) => updateMilestoneName(m.id, e.target.value)} 
+                                            placeholder="e.g., Lead Management" 
+                                        />
+                                    </div>
+                                    <button className="btn-icon" style={{ marginTop: '1.25rem' }} onClick={() => removeMilestone(m.id)} title="Remove Milestone">×</button>
+                                </div>
+                                
+                                <div className="items-container">
+                                    {m.items.map((item) => (
+                                        <div key={item.id} className="item-row">
+                                            <input 
+                                                id={`i-name-${item.id}`}
+                                                type="text" 
+                                                value={item.name} 
+                                                onChange={(e) => updateItemName(m.id, item.id, e.target.value)} 
+                                                placeholder="Task Name" 
+                                            />
+                                            <button className="btn-icon" onClick={() => removeItem(m.id, item.id)} title="Remove Task">×</button>
+                                        </div>
+                                    ))}
+                                    <button className="btn-secondary" style={{marginTop: '0.5rem'}} onClick={() => addItem(m.id)}>+ Add Item</button>
+                                </div>
+                            </div>
+                        ))}
+                        <button className="btn-secondary" onClick={addMilestone}>+ Add Milestone</button>
+                    </div>
+
+                    {/* SECTION 3: PREVIEW & EXPORT */}
+                    <div className="section">
+                        <h2>3. Preview + Export</h2>
+                        <div className="preview-pane">
+                            {previewText || <span style={{color: '#6272a4'}}>Empty tasks will be skipped...</span>}
+                        </div>
+                        
+                        <div className="export-actions">
+                            <button 
+                                className="btn-primary" 
+                                onClick={openGmailDraft} 
+                                disabled={validItemCount === 0}
+                            >
+                                Open Gmail Draft
+                            </button>
+                            <button className="btn-secondary" onClick={copyBody}>Copy Email Body</button>
+                            <button className="btn-secondary" onClick={copyLink}>Copy Link to Project Email & List name</button>
+                            <button className="btn-secondary" onClick={handleReset} style={{color: 'var(--danger)', borderColor: 'var(--danger)'}}>Reset</button>
+                            
+                            <span className="item-count">
+                                {validItemCount} item{validItemCount !== 1 ? 's' : ''} across {validMilestoneCount} milestone{validMilestoneCount !== 1 ? 's' : ''}
+                            </span>
+                        </div>
+                        
+                        <div className="info-text">Works in desktop Gmail; the mobile Gmail app ignores pre-filled fields.</div>
+                        {isUrlTooLong && (
+                            <div className="warning-text" style={{marginTop: '0.5rem'}}>
+                                Large list detected (>1800 chars) — if Gmail opens with a truncated body, use "Copy Email Body" instead and paste manually.
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
