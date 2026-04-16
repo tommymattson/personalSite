@@ -9,7 +9,37 @@
     <script src="../../main.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
     <style>
-        /* Page-specific: labor row grid */
+        /* ── Mode toggle ── */
+        .mode-toggle {
+            display: inline-flex;
+            background: var(--card-bg);
+            border: 1.5px solid rgba(0,0,0,0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 1.75rem;
+        }
+        .mode-btn {
+            padding: 0.6rem 1.35rem;
+            font-family: 'Inter', system-ui, sans-serif;
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+        .mode-btn.active {
+            color: #fff;
+            background: var(--accent);
+        }
+        .mode-btn:not(.active):hover {
+            color: var(--accent);
+            background: rgba(37,99,235,0.06);
+        }
+
+        /* ── Simple mode labor row ── */
         .labor-row {
             display: grid;
             grid-template-columns: 2fr 1fr 1fr 1fr auto;
@@ -24,6 +54,113 @@
             .labor-row .form-group:first-child {
                 grid-column: 1 / -1;
             }
+        }
+
+        /* ── Complex mode phase groupings ── */
+        .phase-group {
+            background: var(--bg-color);
+            border: 1px solid rgba(0,0,0,0.08);
+            border-radius: 10px;
+            margin-bottom: 1.25rem;
+            overflow: hidden;
+            transition: all 0.2s;
+        }
+        .phase-header {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            background: rgba(0,0,0,0.03);
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+            gap: 0.5rem;
+        }
+        .phase-header input {
+            flex: 1;
+            font-weight: 700;
+            border: none;
+            background: transparent;
+            font-size: 1.05rem;
+            padding: 0;
+            margin: 0;
+            color: inherit;
+        }
+        .phase-header input:focus {
+            outline: none;
+            border-bottom: 1px dashed var(--accent);
+        }
+        .collapse-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            transition: transform 0.2s;
+            padding: 0.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .collapse-btn.collapsed {
+            transform: rotate(-90deg);
+        }
+        .phase-rows {
+            padding: 1rem 1rem 0;
+            transition: all 0.3s ease-in-out;
+            transform-origin: top;
+        }
+        .phase-rows.collapsed {
+            display: none;
+        }
+        .add-task-btn.small {
+            margin: 0.5rem 1rem 1rem;
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
+            width: calc(100% - 2rem);
+        }
+
+        /* ── Complex mode phased labor row ── */
+        .phased-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 2fr;
+            grid-template-rows: auto auto;
+            gap: 0.5rem 0.75rem;
+            align-items: end;
+            margin-bottom: 0.85rem;
+            padding: 1rem 1rem 0.85rem;
+            background: var(--card-bg);
+            border: 1px solid rgba(0,0,0,0.06);
+            border-radius: 8px;
+            position: relative;
+        }
+        /* Row 1: Start, End, Role */
+        .phased-row .form-group:nth-child(1) { grid-column: 1; grid-row: 1; }
+        .phased-row .form-group:nth-child(2) { grid-column: 2; grid-row: 1; }
+        .phased-row .form-group:nth-child(3) { grid-column: 3; grid-row: 1; }
+        /* Row 2: Hours, Rate, Burden */
+        .phased-row .form-group:nth-child(4) { grid-column: 1; grid-row: 2; }
+        .phased-row .form-group:nth-child(5) { grid-column: 2; grid-row: 2; }
+        .phased-row .form-group:nth-child(6) { grid-column: 3; grid-row: 2; }
+        
+        .phased-row > .remove-task {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            grid-column: unset;
+            grid-row: unset;
+        }
+
+        @media (max-width: 700px) {
+            .phased-row {
+                grid-template-columns: 1fr 1fr;
+                padding: 0.85rem;
+            }
+            .phased-row .form-group:nth-child(3) { grid-column: 1 / -1; }
+            .phased-row .form-group:nth-child(6) { grid-column: 1 / -1; }
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .phase-group { border-color: rgba(255,255,255,0.08); }
+            .phase-header { background: rgba(255,255,255,0.02); border-bottom-color: rgba(255,255,255,0.06); }
+            .phased-row { border-color: rgba(255,255,255,0.06); }
         }
 
         /* Fee row grid */
@@ -72,10 +209,132 @@
             font-weight: 800;
             color: var(--accent);
         }
+
+        /* CSV action bar */
+        .csv-actions {
+            display: flex;
+            gap: 0.65rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+        .csv-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.5rem 1rem;
+            font-family: 'Inter', system-ui, sans-serif;
+            font-size: 0.82rem;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            min-height: 40px;
+        }
+        .csv-btn svg {
+            width: 16px; height: 16px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .csv-btn.primary {
+            background: var(--accent);
+            color: #fff;
+            border: none;
+        }
+        .csv-btn.primary:hover {
+            background: var(--accent-hover);
+            transform: translateY(-1px);
+        }
+        .csv-btn.secondary {
+            background: transparent;
+            color: var(--accent);
+            border: 1.5px solid rgba(0,0,0,0.12);
+        }
+        .csv-btn.secondary:hover {
+            border-color: var(--accent);
+            background: rgba(37,99,235,0.04);
+        }
+        #csvFileInput { display: none; }
+
+        /* CSV import feedback */
+        .csv-feedback {
+            font-size: 0.82rem;
+            padding: 0.6rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+        .csv-feedback.success {
+            display: block;
+            background: rgba(22,163,74,0.08);
+            color: #16a34a;
+            border: 1px solid rgba(22,163,74,0.2);
+        }
+        .csv-feedback.error {
+            display: block;
+            background: rgba(220,38,38,0.08);
+            color: #dc2626;
+            border: 1px solid rgba(220,38,38,0.2);
+        }
+
+        /* Mode section visibility */
+        .mode-section { display: none; }
+        .mode-section.active { display: block; }
+
+        /* Monthly phasing table */
+        .phase-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+        }
+        .phase-table th,
+        .phase-table td {
+            padding: 0.55rem 0.65rem;
+            text-align: right;
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+            white-space: nowrap;
+        }
+        .phase-table th:first-child,
+        .phase-table td:first-child {
+            text-align: left;
+            position: sticky;
+            left: 0;
+            background: var(--card-bg);
+            z-index: 1;
+        }
+        .phase-table th {
+            font-weight: 700;
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--text-secondary);
+        }
+        .phase-table .total-row {
+            font-weight: 700;
+            border-top: 2px solid var(--accent);
+        }
+
+        /* Phase badge */
+        .phase-badge {
+            display: inline-block;
+            padding: 0.15rem 0.5rem;
+            font-size: 0.7rem;
+            font-weight: 600;
+            border-radius: 4px;
+            background: rgba(37,99,235,0.08);
+            color: var(--accent);
+            margin-left: 0.35rem;
+        }
+
         @media (prefers-color-scheme: dark) {
-            .live-total {
-                box-shadow: 0 -4px 12px rgba(0,0,0,0.3);
-            }
+            .mode-toggle { border-color: rgba(255,255,255,0.12); }
+            .live-total { box-shadow: 0 -4px 12px rgba(0,0,0,0.3); }
+            .csv-btn.secondary { border-color: rgba(255,255,255,0.15); }
+            .phase-table th:first-child,
+            .phase-table td:first-child { background: var(--card-bg); }
+            .phase-table th, .phase-table td { border-bottom-color: rgba(255,255,255,0.08); }
         }
     </style>
 </head>
@@ -90,70 +349,142 @@
         <p>Add labor categories with hours and rates, apply burden and margin, tack on fixed fees, and watch the total price update live. Perfect for proposals, SOWs, and budget planning.</p>
     </section>
 
-    <div class="calc-form">
-        <div class="form-section-title" style="margin-top:0;border-top:none;padding-top:0;">Labor Categories</div>
-        <p style="font-size:0.85rem; color:var(--text-secondary); margin-top:-0.25rem; margin-bottom:1rem;">Add each role involved. Burden multiplier covers benefits, overhead, and indirect costs (typically 1.3x–1.6x).</p>
+    <div class="mode-toggle">
+        <button class="mode-btn active" onclick="switchMode('simple')">Simple</button>
+        <button class="mode-btn" onclick="switchMode('complex')">Phased &amp; CSV</button>
+    </div>
 
-        <div id="laborList">
-            <div class="labor-row">
-                <div class="form-group">
-                    <label>Role / Category</label>
-                    <input type="text" class="labor-name" value="Senior Engineer" placeholder="e.g. Project Manager">
+    <div class="calc-form">
+
+        <div class="mode-section active" id="modeSimple">
+            <div class="form-section-title" style="margin-top:0;border-top:none;padding-top:0;">Labor Categories</div>
+            <p style="font-size:0.85rem; color:var(--text-secondary); margin-top:-0.25rem; margin-bottom:1rem;">Add each role involved. Burden multiplier covers benefits, overhead, and indirect costs (typically 1.3x–1.6x).</p>
+
+            <div id="laborList">
+                <div class="labor-row">
+                    <div class="form-group"><label>Role / Category</label>
+                        <input type="text" class="labor-name" value="Senior Engineer" placeholder="e.g. Project Manager"></div>
+                    <div class="form-group"><label>Hours</label>
+                        <input type="number" class="labor-hours" value="120" min="0" step="1"></div>
+                    <div class="form-group"><label>Rate ($/hr)</label>
+                        <input type="number" class="labor-rate" value="85" min="0" step="1"></div>
+                    <div class="form-group"><label>Burden</label>
+                        <input type="number" class="labor-burden" value="1.45" min="1" max="3" step="0.05"></div>
+                    <button class="remove-task" title="Remove" onclick="removeRow(this, 'labor')">&times;</button>
                 </div>
-                <div class="form-group">
-                    <label>Hours</label>
-                    <input type="number" class="labor-hours" value="120" min="0" step="1">
+                <div class="labor-row">
+                    <div class="form-group"><label>Role / Category</label>
+                        <input type="text" class="labor-name" value="Junior Developer" placeholder="e.g. QA Analyst"></div>
+                    <div class="form-group"><label>Hours</label>
+                        <input type="number" class="labor-hours" value="200" min="0" step="1"></div>
+                    <div class="form-group"><label>Rate ($/hr)</label>
+                        <input type="number" class="labor-rate" value="55" min="0" step="1"></div>
+                    <div class="form-group"><label>Burden</label>
+                        <input type="number" class="labor-burden" value="1.40" min="1" max="3" step="0.05"></div>
+                    <button class="remove-task" title="Remove" onclick="removeRow(this, 'labor')">&times;</button>
                 </div>
-                <div class="form-group">
-                    <label>Rate ($/hr)</label>
-                    <input type="number" class="labor-rate" value="85" min="0" step="1">
+                <div class="labor-row">
+                    <div class="form-group"><label>Role / Category</label>
+                        <input type="text" class="labor-name" value="Project Manager" placeholder="e.g. Designer"></div>
+                    <div class="form-group"><label>Hours</label>
+                        <input type="number" class="labor-hours" value="40" min="0" step="1"></div>
+                    <div class="form-group"><label>Rate ($/hr)</label>
+                        <input type="number" class="labor-rate" value="95" min="0" step="1"></div>
+                    <div class="form-group"><label>Burden</label>
+                        <input type="number" class="labor-burden" value="1.45" min="1" max="3" step="0.05"></div>
+                    <button class="remove-task" title="Remove" onclick="removeRow(this, 'labor')">&times;</button>
                 </div>
-                <div class="form-group">
-                    <label>Burden</label>
-                    <input type="number" class="labor-burden" value="1.45" min="1" max="3" step="0.05">
-                </div>
-                <button class="remove-task" title="Remove" onclick="removeRow(this, 'labor')">&times;</button>
             </div>
-            <div class="labor-row">
-                <div class="form-group">
-                    <label>Role / Category</label>
-                    <input type="text" class="labor-name" value="Junior Developer" placeholder="e.g. QA Analyst">
-                </div>
-                <div class="form-group">
-                    <label>Hours</label>
-                    <input type="number" class="labor-hours" value="200" min="0" step="1">
-                </div>
-                <div class="form-group">
-                    <label>Rate ($/hr)</label>
-                    <input type="number" class="labor-rate" value="55" min="0" step="1">
-                </div>
-                <div class="form-group">
-                    <label>Burden</label>
-                    <input type="number" class="labor-burden" value="1.40" min="1" max="3" step="0.05">
-                </div>
-                <button class="remove-task" title="Remove" onclick="removeRow(this, 'labor')">&times;</button>
-            </div>
-            <div class="labor-row">
-                <div class="form-group">
-                    <label>Role / Category</label>
-                    <input type="text" class="labor-name" value="Project Manager" placeholder="e.g. Designer">
-                </div>
-                <div class="form-group">
-                    <label>Hours</label>
-                    <input type="number" class="labor-hours" value="40" min="0" step="1">
-                </div>
-                <div class="form-group">
-                    <label>Rate ($/hr)</label>
-                    <input type="number" class="labor-rate" value="95" min="0" step="1">
-                </div>
-                <div class="form-group">
-                    <label>Burden</label>
-                    <input type="number" class="labor-burden" value="1.45" min="1" max="3" step="0.05">
-                </div>
-                <button class="remove-task" title="Remove" onclick="removeRow(this, 'labor')">&times;</button>
-            </div>
+            <button class="add-task-btn" onclick="addLaborRow()">+ Add Labor Category</button>
         </div>
-        <button class="add-task-btn" onclick="addLaborRow()">+ Add Labor Category</button>
+
+        <div class="mode-section" id="modeComplex">
+            <div class="form-section-title" style="margin-top:0;border-top:none;padding-top:0;">Phased Labor Inputs</div>
+            <p style="font-size:0.85rem; color:var(--text-secondary); margin-top:-0.25rem; margin-bottom:1rem;">Group rows by phase. Each row represents a role within a date range.</p>
+
+            <div class="csv-actions">
+                <button class="csv-btn secondary" onclick="downloadTemplate()">
+                    <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    Download Template
+                </button>
+
+                <a href="../../assets/120LaborInputsExample.csv" download class="csv-btn secondary" style="text-decoration: none;">
+                    <svg viewBox="0 0 24 24"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
+                    Download Example CSV
+                </a>
+                
+                <button class="csv-btn primary" onclick="document.getElementById('csvFileInput').click()">
+                    <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    Import CSV
+                </button>
+                <button class="csv-btn secondary" onclick="exportCurrentCSV()">
+                    <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                    Export Current
+                </button>
+                <button class="csv-btn secondary" id="toggleAllBtn" onclick="toggleAllPhases()">
+                    <svg viewBox="0 0 24 24"><path d="M4 15l8-8 8 8"/></svg>
+                    <span>Collapse All Phases</span>
+                </button>
+                <input type="file" id="csvFileInput" accept=".csv,.tsv,.txt" onchange="handleCSVImport(event)">
+            </div>
+            <div class="csv-feedback" id="csvFeedback"></div>
+
+            <div id="phasedList">
+                <div class="phase-group">
+                    <div class="phase-header">
+                        <button class="collapse-btn" onclick="togglePhase(this)">▼</button>
+                        <input type="text" class="phase-name-input" value="Build Phase" placeholder="e.g. Discovery Phase">
+                        <button class="remove-task" style="position:static; margin-left:auto;" title="Remove Phase" onclick="removePhaseGroup(this)">&times;</button>
+                    </div>
+                    <div class="phase-rows">
+                        <div class="phased-row">
+                            <div class="form-group"><label>Start Date</label>
+                                <input type="date" class="ph-start" value="2027-01-01"></div>
+                            <div class="form-group"><label>End Date</label>
+                                <input type="date" class="ph-end" value="2027-03-31"></div>
+                            <div class="form-group"><label>Role / Category</label>
+                                <input type="text" class="ph-name" value="Senior Engineer" placeholder="e.g. Engineer"></div>
+                            <div class="form-group"><label>Hours</label>
+                                <input type="number" class="ph-hours" value="360" min="0" step="1"></div>
+                            <div class="form-group"><label>Rate ($/hr)</label>
+                                <input type="number" class="ph-rate" value="95" min="0" step="1"></div>
+                            <div class="form-group"><label>Burden</label>
+                                <input type="number" class="ph-burden" value="1.45" min="1" max="3" step="0.05"></div>
+                            <button class="remove-task" title="Remove" onclick="removePhasedRow(this)">&times;</button>
+                        </div>
+                    </div>
+                    <button class="add-task-btn small" onclick="addPhasedRowToGroup(this.previousElementSibling)">+ Add Role to Phase</button>
+                </div>
+
+                <div class="phase-group">
+                    <div class="phase-header">
+                        <button class="collapse-btn" onclick="togglePhase(this)">▼</button>
+                        <input type="text" class="phase-name-input" value="Discovery Phase" placeholder="e.g. Build Phase">
+                        <button class="remove-task" style="position:static; margin-left:auto;" title="Remove Phase" onclick="removePhaseGroup(this)">&times;</button>
+                    </div>
+                    <div class="phase-rows">
+                        <div class="phased-row">
+                            <div class="form-group"><label>Start Date</label>
+                                <input type="date" class="ph-start" value="2027-01-01"></div>
+                            <div class="form-group"><label>End Date</label>
+                                <input type="date" class="ph-end" value="2027-01-31"></div>
+                            <div class="form-group"><label>Role / Category</label>
+                                <input type="text" class="ph-name" value="UX Designer" placeholder="e.g. Designer"></div>
+                            <div class="form-group"><label>Hours</label>
+                                <input type="number" class="ph-hours" value="80" min="0" step="1"></div>
+                            <div class="form-group"><label>Rate ($/hr)</label>
+                                <input type="number" class="ph-rate" value="85" min="0" step="1"></div>
+                            <div class="form-group"><label>Burden</label>
+                                <input type="number" class="ph-burden" value="1.40" min="1" max="3" step="0.05"></div>
+                            <button class="remove-task" title="Remove" onclick="removePhasedRow(this)">&times;</button>
+                        </div>
+                    </div>
+                    <button class="add-task-btn small" onclick="addPhasedRowToGroup(this.previousElementSibling)">+ Add Role to Phase</button>
+                </div>
+            </div>
+            
+            <button class="add-task-btn" onclick="addPhaseGroup('')">+ Add New Phase</button>
+        </div>
 
         <div class="form-section-title">Margin &amp; Fixed Fees</div>
         <div class="form-grid">
@@ -167,14 +498,10 @@
         <p style="font-size:0.85rem; color:var(--text-secondary); margin-top:1rem; margin-bottom:0.75rem;">Optional flat fees — travel, materials, licensing, subcontractors, etc.</p>
         <div id="feeList">
             <div class="fee-row">
-                <div class="form-group">
-                    <label>Fee Description</label>
-                    <input type="text" class="fee-name" value="Travel & expenses" placeholder="e.g. Software licenses">
-                </div>
-                <div class="form-group">
-                    <label>Amount ($)</label>
-                    <input type="number" class="fee-amount" value="2500" min="0" step="100">
-                </div>
+                <div class="form-group"><label>Fee Description</label>
+                    <input type="text" class="fee-name" value="Travel & expenses" placeholder="e.g. Software licenses"></div>
+                <div class="form-group"><label>Amount ($)</label>
+                    <input type="number" class="fee-amount" value="2500" min="0" step="100"></div>
                 <button class="remove-task" title="Remove" onclick="removeRow(this, 'fee')">&times;</button>
             </div>
         </div>
@@ -183,13 +510,11 @@
         <button class="calc-btn" onclick="calculate()">Build Price</button>
     </div>
 
-    <!-- Live sticky total -->
     <div class="live-total" id="liveTotal">
         <span class="lt-label">Total Price</span>
         <span class="lt-value" id="liveTotalVal">$0</span>
     </div>
 
-    <!-- Results -->
     <div class="results" id="results">
         <div class="download-bar">
             <button class="download-btn" onclick="downloadResults()">
@@ -200,6 +525,11 @@
         <div class="input-summary" id="inputSummary"></div>
         <div class="results-hero" id="heroCard"></div>
         <div class="stat-row" id="statRow"></div>
+
+        <div class="chart-card" id="timelineChartCard" style="display:none;">
+            <h3>Monthly Cost Timeline</h3>
+            <div class="chart-wrap"><canvas id="timelineChart"></canvas></div>
+        </div>
 
         <div class="chart-card">
             <h3>Cost by Labor Category</h3>
@@ -217,6 +547,13 @@
                 <table class="breakdown-table" id="breakdownTable"></table>
             </div>
         </div>
+
+        <div class="chart-card" id="phaseTableCard" style="display:none;">
+            <h3>Monthly Phasing Detail</h3>
+            <div style="overflow-x:auto;">
+                <table class="phase-table" id="phaseTable"></table>
+            </div>
+        </div>
     </div>
 
     <my-footer></my-footer>
@@ -228,7 +565,30 @@ const fmt = n => '$' + Math.round(n).toLocaleString('en-US');
 const mob = () => window.innerWidth <= 600;
 const cf = s => ({ family: 'Inter', size: mob() ? Math.max(s - 2, 9) : s, weight: 500 });
 
-/* ── Dynamic rows ── */
+let currentMode = 'simple';
+
+/* ══════════════════════════════════════
+   MODE SWITCHING
+   ══════════════════════════════════════ */
+function switchMode(mode) {
+    currentMode = mode;
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.mode-btn').forEach(b => {
+        if ((mode === 'simple' && b.textContent.includes('Simple')) ||
+            (mode === 'complex' && b.textContent.includes('Phased'))) {
+            b.classList.add('active');
+        }
+    });
+    $('modeSimple').classList.toggle('active', mode === 'simple');
+    $('modeComplex').classList.toggle('active', mode === 'complex');
+    // Hide results when switching
+    $('results').classList.remove('visible');
+    $('liveTotal').classList.remove('visible');
+}
+
+/* ══════════════════════════════════════
+   SIMPLE MODE — Dynamic rows
+   ══════════════════════════════════════ */
 function addLaborRow() {
     const row = document.createElement('div');
     row.className = 'labor-row';
@@ -269,10 +629,250 @@ function removeRow(btn, type) {
     }
 }
 
-/* ── Gather data ── */
-function gatherData() {
+/* ══════════════════════════════════════
+   COMPLEX MODE — Phased Groupings
+   ══════════════════════════════════════ */
+function togglePhase(btn) {
+    btn.classList.toggle('collapsed');
+    const rowsContainer = btn.closest('.phase-group').querySelector('.phase-rows');
+    rowsContainer.classList.toggle('collapsed');
+}
+
+function toggleAllPhases() {
+    const btn = document.getElementById('toggleAllBtn');
+    const span = btn.querySelector('span');
+    const icon = btn.querySelector('svg');
+    const isCollapsing = span.textContent.includes('Collapse');
+
+    document.querySelectorAll('.phase-group').forEach(group => {
+        const cBtn = group.querySelector('.collapse-btn');
+        const rows = group.querySelector('.phase-rows');
+        
+        if (isCollapsing) {
+            cBtn.classList.add('collapsed');
+            rows.classList.add('collapsed');
+        } else {
+            cBtn.classList.remove('collapsed');
+            rows.classList.remove('collapsed');
+        }
+    });
+
+    if (isCollapsing) {
+        span.textContent = 'Expand All Phases';
+        icon.innerHTML = '<path d="M4 9l8 8 8-8"/>';
+    } else {
+        span.textContent = 'Collapse All Phases';
+        icon.innerHTML = '<path d="M4 15l8-8 8 8"/>';
+    }
+}
+
+function removePhaseGroup(btn) {
+    if (confirm('Remove this phase and all its labor rows?')) {
+        btn.closest('.phase-group').remove();
+        updateLiveTotal();
+    }
+}
+
+function addPhaseGroup(phaseName = '') {
+    const group = document.createElement('div');
+    group.className = 'phase-group';
+    group.innerHTML = `
+        <div class="phase-header">
+            <button class="collapse-btn" onclick="togglePhase(this)">▼</button>
+            <input type="text" class="phase-name-input" value="${phaseName}" placeholder="e.g. New Phase">
+            <button class="remove-task" style="position:static; margin-left:auto;" title="Remove Phase" onclick="removePhaseGroup(this)">&times;</button>
+        </div>
+        <div class="phase-rows"></div>
+        <button class="add-task-btn small" onclick="addPhasedRowToGroup(this.previousElementSibling)">+ Add Role to Phase</button>
+    `;
+    $('phasedList').appendChild(group);
+    bindLiveUpdate();
+    return group;
+}
+
+function addPhasedRowToGroup(container, data = {}) {
+    const row = document.createElement('div');
+    row.className = 'phased-row';
+    row.innerHTML = `
+        <div class="form-group"><label>Start Date</label>
+            <input type="date" class="ph-start" value="${data.start || ''}"></div>
+        <div class="form-group"><label>End Date</label>
+            <input type="date" class="ph-end" value="${data.end || ''}"></div>
+        <div class="form-group"><label>Role / Category</label>
+            <input type="text" class="ph-name" value="${data.name || ''}" placeholder="e.g. Engineer"></div>
+        <div class="form-group"><label>Hours</label>
+            <input type="number" class="ph-hours" value="${data.hours !== undefined ? data.hours : 0}" min="0" step="1"></div>
+        <div class="form-group"><label>Rate ($/hr)</label>
+            <input type="number" class="ph-rate" value="${data.rate !== undefined ? data.rate : 75}" min="0" step="1"></div>
+        <div class="form-group"><label>Burden</label>
+            <input type="number" class="ph-burden" value="${data.burden !== undefined ? data.burden : 1.45}" min="1" max="3" step="0.05"></div>
+        <button class="remove-task" title="Remove" onclick="removePhasedRow(this)">&times;</button>`;
+    container.appendChild(row);
+    bindLiveUpdate();
+}
+
+function removePhasedRow(btn) {
+    const row = btn.closest('.phased-row');
+    row.remove();
+    updateLiveTotal();
+}
+
+/* ══════════════════════════════════════
+   CSV TEMPLATE & IMPORT / EXPORT
+   ══════════════════════════════════════ */
+function downloadTemplate() {
+    const headers = 'Start Date,End Date,Role/Category,Hours,Rate ($/HR),Burden,Phase';
+    const sample1 = '1/1/27,3/31/27,Senior Engineer,360,95,1.45,Build Phase';
+    const sample2 = '1/1/27,1/31/27,UX Designer,80,85,1.40,Discovery Phase';
+    const sample3 = '4/1/27,4/30/27,QA Analyst,120,70,1.35,Testing Phase';
+    const csv = [headers, sample1, sample2, sample3].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'LaborInputsTemplate.csv';
+    a.click();
+    URL.revokeObjectURL(a.href);
+}
+
+function exportCurrentCSV() {
+    const rows = gatherPhasedData();
+    if (rows.length === 0) return;
+    const headers = 'Start Date,End Date,Role/Category,Hours,Rate ($/HR),Burden,Phase';
+    const lines = rows.map(r => {
+        const sd = r.startDate ? formatDateCSV(r.startDate) : '';
+        const ed = r.endDate ? formatDateCSV(r.endDate) : '';
+        return `${sd},${ed},"${r.name}",${r.hours},${r.rate},${r.burden},"${r.phase}"`;
+    });
+    const csv = [headers, ...lines].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'LaborInputs.csv';
+    a.click();
+    URL.revokeObjectURL(a.href);
+}
+
+function formatDateCSV(dateStr) {
+    const d = new Date(dateStr + 'T00:00:00');
+    return (d.getMonth() + 1) + '/' + d.getDate() + '/' + String(d.getFullYear()).slice(-2);
+}
+
+function handleCSVImport(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const feedback = $('csvFeedback');
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const text = e.target.result.trim();
+            const lines = text.split(/\r?\n/);
+            if (lines.length < 2) throw new Error('CSV must have a header row and at least one data row.');
+
+            // Parse header to find columns
+            const header = lines[0].split(',').map(h => h.trim().toLowerCase());
+            const colMap = {};
+            header.forEach((h, i) => {
+                if (h.includes('start')) colMap.start = i;
+                else if (h.includes('end')) colMap.end = i;
+                else if (h.includes('role') || h.includes('category')) colMap.name = i;
+                else if (h.includes('hour')) colMap.hours = i;
+                else if (h.includes('rate')) colMap.rate = i;
+                else if (h.includes('burden')) colMap.burden = i;
+                else if (h.includes('phase')) colMap.phase = i;
+            });
+
+            if (colMap.name === undefined || colMap.hours === undefined || colMap.rate === undefined) {
+                throw new Error('CSV must contain Role/Category, Hours, and Rate columns.');
+            }
+
+            $('phasedList').innerHTML = ''; // Clear existing DOM groups
+
+            let imported = 0;
+            const phaseMap = {};
+
+            for (let i = 1; i < lines.length; i++) {
+                const vals = parseCSVLine(lines[i]);
+                if (vals.length < 3 || vals.every(v => !v.trim())) continue;
+
+                const name = vals[colMap.name] || '';
+                const hours = vals[colMap.hours] || '0';
+                const rate = vals[colMap.rate] || '0';
+                const burden = vals[colMap.burden !== undefined ? colMap.burden : -1] || '1.45';
+                const phase = vals[colMap.phase !== undefined ? colMap.phase : -1] || 'Imported Phase';
+                const startRaw = vals[colMap.start !== undefined ? colMap.start : -1] || '';
+                const endRaw = vals[colMap.end !== undefined ? colMap.end : -1] || '';
+
+                if (!phaseMap[phase]) phaseMap[phase] = [];
+                phaseMap[phase].push({
+                    start: parseFlexDate(startRaw),
+                    end: parseFlexDate(endRaw),
+                    name: escAttr(name),
+                    hours: parseFloat(hours) || 0,
+                    rate: parseFloat(rate) || 0,
+                    burden: parseFloat(burden) || 1.45
+                });
+            }
+
+            for (const [phaseName, tasks] of Object.entries(phaseMap)) {
+                const group = addPhaseGroup(phaseName);
+                const rowsContainer = group.querySelector('.phase-rows');
+                tasks.forEach(t => {
+                    addPhasedRowToGroup(rowsContainer, t);
+                    imported++;
+                });
+            }
+
+            bindLiveUpdate();
+            feedback.className = 'csv-feedback success';
+            feedback.textContent = `Imported ${imported} labor row${imported !== 1 ? 's' : ''} successfully.`;
+            // Auto-switch to complex mode
+            switchMode('complex');
+        } catch (err) {
+            feedback.className = 'csv-feedback error';
+            feedback.textContent = 'Import error: ' + err.message;
+        }
+    };
+    reader.readAsText(file);
+    event.target.value = ''; // reset input
+}
+
+function parseCSVLine(line) {
+    const result = [];
+    let current = '';
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (ch === '"') { inQuotes = !inQuotes; }
+        else if (ch === ',' && !inQuotes) { result.push(current.trim()); current = ''; }
+        else { current += ch; }
+    }
+    result.push(current.trim());
+    return result;
+}
+
+function parseFlexDate(raw) {
+    if (!raw) return '';
+    raw = raw.replace(/"/g, '').trim();
+    // Try M/D/YY or M/D/YYYY
+    const parts = raw.split('/');
+    if (parts.length === 3) {
+        let [m, d, y] = parts.map(Number);
+        if (y < 100) y += 2000;
+        return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    }
+    // Try ISO format
+    if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+    return '';
+}
+
+function escAttr(s) { return s.replace(/"/g, '&quot;').replace(/</g, '&lt;'); }
+
+/* ══════════════════════════════════════
+   GATHER DATA
+   ══════════════════════════════════════ */
+function gatherSimpleData() {
     const laborRows = [];
-    document.querySelectorAll('.labor-row').forEach(row => {
+    document.querySelectorAll('#laborList .labor-row').forEach(row => {
         const name = row.querySelector('.labor-name').value || 'Unnamed Role';
         const hours = parseFloat(row.querySelector('.labor-hours').value) || 0;
         const rate = parseFloat(row.querySelector('.labor-rate').value) || 0;
@@ -281,14 +881,66 @@ function gatherData() {
         const burdenedCost = baseCost * burden;
         laborRows.push({ name, hours, rate, burden, baseCost, burdenedCost });
     });
+    return laborRows;
+}
 
+function gatherPhasedData() {
+    const rows = [];
+    document.querySelectorAll('.phase-group').forEach(group => {
+        const phase = group.querySelector('.phase-name-input').value || 'Unnamed Phase';
+        group.querySelectorAll('.phased-row').forEach(row => {
+            const startDate = row.querySelector('.ph-start').value || '';
+            const endDate = row.querySelector('.ph-end').value || '';
+            const name = row.querySelector('.ph-name').value || 'Unnamed Role';
+            const hours = parseFloat(row.querySelector('.ph-hours').value) || 0;
+            const rate = parseFloat(row.querySelector('.ph-rate').value) || 0;
+            const burden = parseFloat(row.querySelector('.ph-burden').value) || 1;
+            const baseCost = hours * rate;
+            const burdenedCost = baseCost * burden;
+            rows.push({ startDate, endDate, name, hours, rate, burden, phase, baseCost, burdenedCost });
+        });
+    });
+    return rows;
+}
+
+function gatherFees() {
     const feeRows = [];
     document.querySelectorAll('.fee-row').forEach(row => {
         const name = row.querySelector('.fee-name').value || 'Fee';
         const amount = parseFloat(row.querySelector('.fee-amount').value) || 0;
         feeRows.push({ name, amount });
     });
+    return feeRows;
+}
 
+function gatherAllData() {
+    const isComplex = currentMode === 'complex';
+    let laborRows;
+
+    if (isComplex) {
+        // Aggregate phased rows by role for the summary
+        const phased = gatherPhasedData();
+        const roleMap = {};
+        phased.forEach(r => {
+            if (!roleMap[r.name]) {
+                roleMap[r.name] = { name: r.name, hours: 0, rate: r.rate, burden: r.burden, baseCost: 0, burdenedCost: 0, phases: [] };
+            }
+            roleMap[r.name].hours += r.hours;
+            roleMap[r.name].baseCost += r.baseCost;
+            roleMap[r.name].burdenedCost += r.burdenedCost;
+            roleMap[r.name].phases.push(r);
+        });
+        laborRows = Object.values(roleMap);
+        // Compute weighted avg rate for display
+        laborRows.forEach(r => {
+            r.rate = r.hours > 0 ? r.baseCost / r.hours : 0;
+            r.burden = r.baseCost > 0 ? r.burdenedCost / r.baseCost : 1;
+        });
+    } else {
+        laborRows = gatherSimpleData();
+    }
+
+    const feeRows = gatherFees();
     const marginPct = (parseFloat($('marginPct').value) || 0) / 100;
 
     const totalHours = laborRows.reduce((s, r) => s + r.hours, 0);
@@ -298,42 +950,103 @@ function gatherData() {
     const totalFees = feeRows.reduce((s, f) => s + f.amount, 0);
     const totalPrice = totalBurdenedCost + marginAmount + totalFees;
     const effectiveRate = totalHours > 0 ? totalPrice / totalHours : 0;
-    const blendedBase = totalHours > 0 ? totalBaseCost / totalHours : 0;
-    const blendedBurdened = totalHours > 0 ? totalBurdenedCost / totalHours : 0;
 
     return {
         laborRows, feeRows, marginPct, totalHours,
         totalBaseCost, totalBurdenedCost, marginAmount,
-        totalFees, totalPrice, effectiveRate, blendedBase, blendedBurdened
+        totalFees, totalPrice, effectiveRate, isComplex
     };
 }
 
-/* ── Live total ── */
+/* ══════════════════════════════════════
+   MONTHLY PHASING HELPERS
+   ══════════════════════════════════════ */
+function getMonthsBetween(startStr, endStr) {
+    if (!startStr || !endStr) return [];
+    const start = new Date(startStr + 'T00:00:00');
+    const end = new Date(endStr + 'T00:00:00');
+    const months = [];
+    const d = new Date(start.getFullYear(), start.getMonth(), 1);
+    while (d <= end) {
+        months.push(d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'));
+        d.setMonth(d.getMonth() + 1);
+    }
+    return months;
+}
+
+function buildMonthlyData(phasedRows) {
+    const allMonths = new Set();
+    phasedRows.forEach(r => {
+        getMonthsBetween(r.startDate, r.endDate).forEach(m => allMonths.add(m));
+    });
+    const sortedMonths = [...allMonths].sort();
+    const roles = [...new Set(phasedRows.map(r => r.name))];
+    const matrix = {};
+    sortedMonths.forEach(m => { matrix[m] = {}; roles.forEach(r => { matrix[m][r] = 0; }); });
+
+    phasedRows.forEach(r => {
+        const months = getMonthsBetween(r.startDate, r.endDate);
+        if (months.length === 0) return;
+        const hoursPerMonth = r.hours / months.length;
+        const costPerMonth = (hoursPerMonth * r.rate * r.burden);
+        months.forEach(m => {
+            if (matrix[m]) matrix[m][r.name] = (matrix[m][r.name] || 0) + costPerMonth;
+        });
+    });
+
+    return { sortedMonths, roles, matrix };
+}
+
+function formatMonthLabel(ym) {
+    const [y, m] = ym.split('-');
+    const names = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return names[parseInt(m) - 1] + ' ' + y;
+}
+
+function formatMonthShort(ym) {
+    const [y, m] = ym.split('-');
+    const names = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return names[parseInt(m) - 1] + " '" + y.slice(-2);
+}
+
+/* ══════════════════════════════════════
+   LIVE TOTAL
+   ══════════════════════════════════════ */
 function updateLiveTotal() {
-    const d = gatherData();
+    const d = gatherAllData();
     $('liveTotalVal').textContent = fmt(d.totalPrice);
     $('liveTotal').classList.add('visible');
 }
 
 function bindLiveUpdate() {
-    document.querySelectorAll('.labor-hours, .labor-rate, .labor-burden, .fee-amount, #marginPct').forEach(el => {
+    document.querySelectorAll('.labor-hours, .labor-rate, .labor-burden, .ph-hours, .ph-rate, .ph-burden, .fee-amount, #marginPct, .phase-name-input, .ph-start, .ph-end, .ph-name').forEach(el => {
         el.removeEventListener('input', updateLiveTotal);
         el.addEventListener('input', updateLiveTotal);
     });
 }
 bindLiveUpdate();
 
-/* ── Chart instances ── */
-let laborChartInst = null, compChartInst = null;
+/* ══════════════════════════════════════
+   CHART INSTANCES
+   ══════════════════════════════════════ */
+let laborChartInst = null, compChartInst = null, timelineChartInst = null;
 
-/* ── Calculate ── */
+/* ══════════════════════════════════════
+   CALCULATE
+   ══════════════════════════════════════ */
 function calculate() {
-    const d = gatherData();
+    const d = gatherAllData();
+    const isComplex = d.isComplex;
 
-    // Input summary for export
-    const laborSummary = d.laborRows.map(r => r.name + ': ' + r.hours + 'h @ $' + r.rate + '/hr (' + r.burden + 'x)').join(', ');
+    // Toggle complex-only result cards
+    $('timelineChartCard').style.display = isComplex ? 'block' : 'none';
+    $('phaseTableCard').style.display = isComplex ? 'block' : 'none';
+
+    // Input summary
+    const laborSummary = d.laborRows.map(r => r.name + ': ' + r.hours + 'h @ $' + Math.round(r.rate) + '/hr (' + r.burden.toFixed(2) + 'x)').join(', ');
     const feeSummary = d.feeRows.filter(f => f.amount > 0).map(f => f.name + ': ' + fmt(f.amount)).join(', ') || 'None';
-    $('inputSummary').innerHTML = `<h4>Pricing Inputs</h4><div class="summary-grid">
+    $('inputSummary').innerHTML = `<h4>Pricing Inputs${isComplex ? ' (Phased)' : ''}</h4><div class="summary-grid">
+        <div class="summary-item"><span class="s-label">Mode</span><span class="s-value">${isComplex ? 'Phased / CSV' : 'Simple'}</span></div>
         <div class="summary-item"><span class="s-label">Labor</span><span class="s-value">${laborSummary}</span></div>
         <div class="summary-item"><span class="s-label">Margin</span><span class="s-value">${(d.marginPct * 100).toFixed(0)}%</span></div>
         <div class="summary-item"><span class="s-label">Fixed Fees</span><span class="s-value">${feeSummary}</span></div>
@@ -347,22 +1060,100 @@ function calculate() {
         <div class="hero-sub">${d.totalHours.toLocaleString()} hours &bull; ${fmt(d.effectiveRate)}/hr effective rate</div>`;
 
     // Stat cards
-    $('statRow').innerHTML = `
+    let statsHTML = `
         <div class="stat-card"><div class="val">${d.totalHours.toLocaleString()}</div><div class="lbl">Total Hours</div></div>
         <div class="stat-card"><div class="val">${fmt(d.totalBaseCost)}</div><div class="lbl">Base Labor Cost</div></div>
         <div class="stat-card"><div class="val">${fmt(d.totalBurdenedCost)}</div><div class="lbl">Burdened Labor</div></div>
         <div class="stat-card"><div class="val green">${fmt(d.marginAmount)}</div><div class="lbl">Margin (${(d.marginPct * 100).toFixed(0)}%)</div></div>
         <div class="stat-card"><div class="val">${fmt(d.totalFees)}</div><div class="lbl">Fixed Fees</div></div>
         <div class="stat-card"><div class="val">${fmt(d.effectiveRate)}</div><div class="lbl">Effective $/hr</div></div>`;
+    if (isComplex) {
+        const phased = gatherPhasedData();
+        const monthly = buildMonthlyData(phased);
+        const duration = monthly.sortedMonths.length;
+        const phases = [...new Set(phased.map(r => r.phase).filter(Boolean))];
+        statsHTML += `
+            <div class="stat-card"><div class="val">${duration}mo</div><div class="lbl">Project Duration</div></div>
+            <div class="stat-card"><div class="val">${phases.length || '—'}</div><div class="lbl">Phases</div></div>`;
+    }
+    $('statRow').innerHTML = statsHTML;
 
-    // Charts
+    // Chart config
     const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     const gridClr = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
     const txtClr = isDark ? '#d1d5db' : '#6b7280';
     const mobile = mob();
     const palette = ['#2563eb', '#16a34a', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#ef4444', '#84cc16'];
 
-    // 1. Burdened cost by labor category (horizontal bar)
+    /* ── Timeline chart (complex only) ── */
+    if (isComplex) {
+        const phased = gatherPhasedData();
+        const monthly = buildMonthlyData(phased);
+
+        if (timelineChartInst) timelineChartInst.destroy();
+        const datasets = monthly.roles.map((role, i) => ({
+            label: role,
+            data: monthly.sortedMonths.map(m => Math.round(monthly.matrix[m][role] || 0)),
+            backgroundColor: palette[i % palette.length],
+            borderRadius: 3
+        }));
+
+        timelineChartInst = new Chart($('timelineChart'), {
+            type: 'bar',
+            data: { labels: monthly.sortedMonths.map(formatMonthShort), datasets },
+            options: {
+                responsive: true, maintainAspectRatio: true,
+                aspectRatio: mobile ? 1.1 : 2.2,
+                plugins: {
+                    legend: { position: mobile ? 'bottom' : 'top', labels: { color: txtClr, font: cf(11), boxWidth: 12, padding: 12 } },
+                    tooltip: {
+                        mode: 'index',
+                        callbacks: {
+                            label: c => c.dataset.label + ': ' + fmt(c.raw),
+                            footer: items => {
+                                const total = items.reduce((s, it) => s + it.raw, 0);
+                                return 'Total: ' + fmt(total);
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: { stacked: true, ticks: { color: txtClr, font: cf(10), maxRotation: mobile ? 45 : 0 }, grid: { display: false } },
+                    y: { stacked: true, ticks: { color: txtClr, font: cf(10), callback: v => '$' + (v / 1000).toFixed(0) + 'k' }, grid: { color: gridClr } }
+                }
+            }
+        });
+
+        /* ── Phase table ── */
+        let ptHTML = '<thead><tr><th>Role</th>';
+        monthly.sortedMonths.forEach(m => { ptHTML += `<th>${formatMonthShort(m)}</th>`; });
+        ptHTML += '<th>Total</th></tr></thead><tbody>';
+
+        monthly.roles.forEach(role => {
+            let rowTotal = 0;
+            ptHTML += `<tr><td>${role}</td>`;
+            monthly.sortedMonths.forEach(m => {
+                const val = Math.round(monthly.matrix[m][role] || 0);
+                rowTotal += val;
+                ptHTML += `<td>${val > 0 ? fmt(val) : '—'}</td>`;
+            });
+            ptHTML += `<td style="font-weight:700">${fmt(rowTotal)}</td></tr>`;
+        });
+
+        // Monthly totals row
+        ptHTML += '<tr class="total-row"><td>Monthly Total</td>';
+        let grandTotal = 0;
+        monthly.sortedMonths.forEach(m => {
+            const mTotal = monthly.roles.reduce((s, r) => s + (monthly.matrix[m][r] || 0), 0);
+            grandTotal += mTotal;
+            ptHTML += `<td>${fmt(Math.round(mTotal))}</td>`;
+        });
+        ptHTML += `<td style="font-weight:800">${fmt(Math.round(grandTotal))}</td></tr>`;
+        ptHTML += '</tbody>';
+        $('phaseTable').innerHTML = ptHTML;
+    }
+
+    /* ── Labor chart (both modes) ── */
     if (laborChartInst) laborChartInst.destroy();
     const laborLabels = d.laborRows.map(r => r.name);
     const laborBase = d.laborRows.map(r => Math.round(r.baseCost));
@@ -394,21 +1185,13 @@ function calculate() {
                 }
             },
             scales: {
-                x: {
-                    stacked: true,
-                    ticks: { color: txtClr, font: cf(10), callback: v => typeof v === 'number' ? '$' + (v / 1000).toFixed(0) + 'k' : v, maxRotation: mobile ? 45 : 0 },
-                    grid: { color: gridClr }
-                },
-                y: {
-                    stacked: true,
-                    ticks: { color: txtClr, font: cf(10), callback: v => typeof v === 'number' ? '$' + (v / 1000).toFixed(0) + 'k' : v },
-                    grid: { display: false }
-                }
+                x: { stacked: true, ticks: { color: txtClr, font: cf(10), callback: v => typeof v === 'number' ? '$' + (v / 1000).toFixed(0) + 'k' : v, maxRotation: mobile ? 45 : 0 }, grid: { color: gridClr } },
+                y: { stacked: true, ticks: { color: txtClr, font: cf(10), callback: v => typeof v === 'number' ? '$' + (v / 1000).toFixed(0) + 'k' : v }, grid: { display: false } }
             }
         }
     });
 
-    // 2. Price composition doughnut
+    /* ── Composition doughnut ── */
     if (compChartInst) compChartInst.destroy();
     const compLabels = [];
     const compData = [];
@@ -435,18 +1218,10 @@ function calculate() {
 
     compChartInst = new Chart($('compChart'), {
         type: 'doughnut',
-        data: {
-            labels: compLabels,
-            datasets: [{
-                data: compData,
-                backgroundColor: compColors,
-                borderWidth: 0
-            }]
-        },
+        data: { labels: compLabels, datasets: [{ data: compData, backgroundColor: compColors, borderWidth: 0 }] },
         options: {
             responsive: true, maintainAspectRatio: true,
-            aspectRatio: mobile ? 1.3 : 2,
-            cutout: '55%',
+            aspectRatio: mobile ? 1.3 : 2, cutout: '55%',
             plugins: {
                 legend: { position: 'bottom', labels: { color: txtClr, font: cf(11), boxWidth: 12, padding: 14 } },
                 tooltip: {
@@ -462,52 +1237,80 @@ function calculate() {
         }
     });
 
-    // 3. Breakdown table
-    let tableHTML = `<thead><tr>
-        <th>Category</th><th>Hours</th><th>Rate</th><th>Burden</th><th>Base Cost</th><th>Burdened Cost</th><th>% of Total</th>
-    </tr></thead><tbody>`;
-    d.laborRows.forEach(r => {
-        const pctOfTotal = d.totalPrice > 0 ? (r.burdenedCost / d.totalPrice * 100).toFixed(1) : 0;
-        tableHTML += `<tr>
-            <td>${r.name}</td>
-            <td>${r.hours}</td>
-            <td>${fmt(r.rate)}</td>
-            <td>${r.burden}x</td>
-            <td>${fmt(r.baseCost)}</td>
-            <td>${fmt(r.burdenedCost)}</td>
-            <td>${pctOfTotal}%</td>
-        </tr>`;
-    });
+    /* ── Breakdown table ── */
+    let tableHTML = '<thead><tr><th>Category</th>';
+    if (isComplex) tableHTML += '<th>Date Range</th><th>Phase</th>';
+    tableHTML += '<th>Hours</th><th>Rate</th><th>Burden</th><th>Base Cost</th><th>Burdened Cost</th><th>% of Total</th></tr></thead><tbody>';
+
+    if (isComplex) {
+        const phased = gatherPhasedData();
+        phased.forEach(r => {
+            const pctOfTotal = d.totalPrice > 0 ? (r.burdenedCost / d.totalPrice * 100).toFixed(1) : 0;
+            const dateRange = r.startDate && r.endDate ? formatMonthLabel(r.startDate.slice(0,7)) + ' – ' + formatMonthLabel(r.endDate.slice(0,7)) : '—';
+            tableHTML += `<tr>
+                <td>${r.name}</td>
+                <td>${dateRange}</td>
+                <td>${r.phase ? '<span class="phase-badge">' + r.phase + '</span>' : '—'}</td>
+                <td>${r.hours}</td>
+                <td>${fmt(r.rate)}</td>
+                <td>${r.burden}x</td>
+                <td>${fmt(r.baseCost)}</td>
+                <td>${fmt(r.burdenedCost)}</td>
+                <td>${pctOfTotal}%</td>
+            </tr>`;
+        });
+    } else {
+        d.laborRows.forEach(r => {
+            const pctOfTotal = d.totalPrice > 0 ? (r.burdenedCost / d.totalPrice * 100).toFixed(1) : 0;
+            tableHTML += `<tr>
+                <td>${r.name}</td>
+                <td>${r.hours}</td>
+                <td>${fmt(r.rate)}</td>
+                <td>${r.burden.toFixed(2)}x</td>
+                <td>${fmt(r.baseCost)}</td>
+                <td>${fmt(r.burdenedCost)}</td>
+                <td>${pctOfTotal}%</td>
+            </tr>`;
+        });
+    }
+
     // Subtotals
+    const colSpan = isComplex ? 5 : 3;
     tableHTML += `<tr style="font-weight:700; border-top:2px solid var(--accent);">
-        <td>Labor Subtotal</td>
-        <td>${d.totalHours}</td><td></td><td></td>
+        <td>Labor Subtotal</td>`;
+    if (isComplex) tableHTML += '<td></td><td></td>';
+    tableHTML += `<td>${d.totalHours}</td><td></td><td></td>
         <td>${fmt(d.totalBaseCost)}</td>
         <td>${fmt(d.totalBurdenedCost)}</td>
         <td>${d.totalPrice > 0 ? (d.totalBurdenedCost / d.totalPrice * 100).toFixed(1) : 0}%</td>
     </tr>`;
+
     if (d.marginAmount > 0) {
-        tableHTML += `<tr>
-            <td>Profit Margin (${(d.marginPct * 100).toFixed(0)}%)</td>
-            <td></td><td></td><td></td><td></td>
+        tableHTML += `<tr><td>Profit Margin (${(d.marginPct * 100).toFixed(0)}%)</td>`;
+        if (isComplex) tableHTML += '<td></td><td></td>';
+        tableHTML += `<td></td><td></td><td></td><td></td>
             <td style="color:#16a34a;font-weight:600">${fmt(d.marginAmount)}</td>
             <td>${d.totalPrice > 0 ? (d.marginAmount / d.totalPrice * 100).toFixed(1) : 0}%</td>
         </tr>`;
     }
+
     d.feeRows.forEach(f => {
         if (f.amount > 0) {
-            tableHTML += `<tr>
-                <td>${f.name}</td><td></td><td></td><td></td><td></td>
+            tableHTML += `<tr><td>${f.name}</td>`;
+            if (isComplex) tableHTML += '<td></td><td></td>';
+            tableHTML += `<td></td><td></td><td></td><td></td>
                 <td>${fmt(f.amount)}</td>
                 <td>${d.totalPrice > 0 ? (f.amount / d.totalPrice * 100).toFixed(1) : 0}%</td>
             </tr>`;
         }
     });
+
     tableHTML += `<tr style="font-weight:800; border-top:2px solid var(--accent); font-size:1.05em;">
-        <td>Total Price</td><td></td><td></td><td></td><td></td>
+        <td>Total Price</td>`;
+    if (isComplex) tableHTML += '<td></td><td></td>';
+    tableHTML += `<td></td><td></td><td></td><td></td>
         <td>${fmt(d.totalPrice)}</td><td>100%</td>
-    </tr>`;
-    tableHTML += '</tbody>';
+    </tr></tbody>`;
     $('breakdownTable').innerHTML = tableHTML;
 
     updateLiveTotal();
@@ -545,8 +1348,15 @@ function downloadResults() {
         scale: 2,
         useCORS: true,
         logging: false,
+        width: 1100,
+        windowWidth: 1300,
         onclone: (clonedDoc) => {
             const clone = clonedDoc.getElementById('results');
+            clone.style.width = '1100px';
+            clone.style.maxWidth = '1100px';
+            clone.style.margin = '0 auto';
+            clone.style.padding = '30px';
+            clone.style.boxSizing = 'border-box';
             clone.style.animation = 'none';
             clone.style.transition = 'none';
             clone.style.opacity = '1';
@@ -555,13 +1365,9 @@ function downloadResults() {
             const hero = clone.querySelector('.results-hero, .hero-card, .cashflow-hero');
             if (hero) {
                 hero.style.boxShadow = 'none';
-                if (hero.classList.contains('positive')) {
-                    hero.style.background = '#16a34a';
-                } else if (hero.classList.contains('negative') || hero.classList.contains('red')) {
-                    hero.style.background = '#dc2626';
-                } else {
-                    hero.style.background = '#2563eb';
-                }
+                if (hero.classList.contains('positive')) hero.style.background = '#16a34a';
+                else if (hero.classList.contains('negative') || hero.classList.contains('red')) hero.style.background = '#dc2626';
+                else hero.style.background = '#2563eb';
                 hero.style.color = '#ffffff';
             }
 
@@ -574,9 +1380,14 @@ function downloadResults() {
 
             const dlBar = clone.querySelector('.download-bar');
             if (dlBar) dlBar.style.display = 'none';
-
             const summary = clone.querySelector('.input-summary');
             if (summary) summary.style.display = 'block';
+
+            // Fix sticky column in phase table for screenshot
+            clone.querySelectorAll('.phase-table td:first-child, .phase-table th:first-child').forEach(td => {
+                td.style.position = 'static';
+                td.style.background = '#ffffff';
+            });
         }
     })
     .then(canvas => {
