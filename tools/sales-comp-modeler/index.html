@@ -188,13 +188,32 @@
         .action-btn.secondary:hover { border-color: var(--accent); background: rgba(37,99,235,0.04); }
 
         /* ── Responsive ── */
-        @media (max-width: 600px) {
+        @media (max-width: 768px) {
             .role-grid, .incentive-grid { grid-template-columns: 1fr 1fr; }
+        }
+
+        @media (max-width: 600px) {
+            .role-grid, .incentive-grid { grid-template-columns: 1fr; }
+            .role-card { padding: 1rem; }
+            .incentive-card { padding: 0.85rem 1rem; }
             .tier-row-sm { grid-template-columns: 1fr 1fr auto; }
             .tier-row-sm > div:first-child { grid-column: 1 / -2; }
-            .template-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
-            .model-tabs { gap: 0; }
-            .model-tab { padding: 0.5rem 0.65rem; font-size: 0.75rem; }
+            .tier-row-sm button { min-width: 44px; min-height: 44px; }
+            .template-grid { grid-template-columns: 1fr 1fr; }
+            .template-btn { padding: 0.85rem 0.65rem; min-height: 44px; }
+            .model-tabs {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                flex-wrap: nowrap;
+                gap: 0;
+            }
+            .model-tab {
+                padding: 0.65rem 0.85rem;
+                font-size: 0.82rem;
+                min-height: 44px;
+                flex-shrink: 0;
+            }
+            .scenario-bar { flex-direction: column; gap: 0.5rem; }
         }
 
         /* ── Dark mode ── */
@@ -218,7 +237,7 @@
 
 <div class="container">
     <my-header></my-header>
-    <a href="../" class="back-link">&larr; All Tools</a>
+    <a href="/tools/" class="back-link">&larr; All Tools &amp; Calculators</a>
 
     <section class="page-intro">
         <div class="subtitle">Sales Operations</div>

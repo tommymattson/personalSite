@@ -176,7 +176,7 @@ nav {
 /* Cards Grid */
 .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
     gap: 2rem;
     margin-bottom: 4rem;
 }
@@ -365,6 +365,29 @@ details .grid {
     .hero {
         flex-direction: column;
         text-align: center;
+    }
+    .profile-pic {
+        width: 140px;
+        height: 140px;
+    }
+    .container {
+        padding: 1.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .container {
+        padding: 1rem;
+    }
+    .profile-pic {
+        width: 110px;
+        height: 110px;
+    }
+    .hero h1 {
+        font-size: 2rem;
+    }
+    .hero p {
+        font-size: 1.05rem;
     }
 }
 
