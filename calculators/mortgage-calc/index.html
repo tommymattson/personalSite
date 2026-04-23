@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mortgage Refinance & Early Payoff Calculator | Thomas Mattson</title>
+    <link rel="stylesheet" href="../../styles.css">
+    <link rel="stylesheet" href="../../calculators/calculators.css">
+    <script src="../../main.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <style>
+        /* ── Tabs ── */
+        .model-tabs {
+            display: flex; gap: 0.4rem; margin-bottom: 1.5rem;
+            flex-wrap: wrap; border-bottom: 2px solid rgba(0,0,0,0.06);
+            padding-bottom: 0;
+        }
+        .model-tab {
+            padding: 0.6rem 1.1rem; font-size: 0.82rem; font-weight: 700;
+            color: var(--text-secondary); background: none; border: none;
+            cursor: pointer; font-family: 'Inter', system-ui, sans-serif;
+            border-bottom: 3px solid transparent; margin-bottom: -2px;
+            transition: all 0.2s; white-space: nowrap;
+        }
+        .model-tab:hover { color: var(--accent); }
+        .model-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+
+        /* ── Scenario cards ── */
+        .scenario-card {
+            background: rgba(0,0,0,0.015); border: 1.5px solid rgba(0,0,0,0.08);
+            border-radius: 10px; padding: 1.25rem; margin-bottom: 0.85rem;
+        }
+        .scenario-card h3 {
+            font-size: 0.95rem; font-weight: 700; margin: 0 0 0.85rem;
+            display: flex; align-items: center; gap: 0.5rem;
+        }
+        .scenario-badge {
+            font-size: 0.65rem; font-weight: 700; padding: 0.15rem 0.55rem;
+            border-radius: 50px; text-transform: uppercase; letter-spacing: 0.03em;
+        }
+        .badge-current { background: rgba(107,114,128,0.1); color: #6b7280; }
+        .badge-refi { background: rgba(37,99,235,0.1); color: #2563eb; }
+        .badge-extra { background: rgba(22,163,74,0.1); color: #16a34a; }
+
+        /* ── Toggle switch ── */
+        .toggle-row {
+            display: flex; align-items: center; gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+        .toggle-label {
+            font-size: 0.82rem; font-weight: 600; color: var(--text-secondary);
+        }
+        .toggle-switch {
+            position: relative; width: 44px; height: 24px; cursor: pointer;
+        }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .toggle-slider {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.12); border-radius: 12px; transition: 0.3s;
+        }
+        .toggle-slider::before {
+            content: ''; position: absolute; height: 18px; width: 18px;
+            left: 3px; bottom: 3px; background: #fff; border-radius: 50%;
+            transition: 0.3s; box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+        .toggle-switch input:checked + .toggle-slider { background: var(--accent); }
+        .toggle-switch input:checked + .toggle-slider::before { transform: translateX(20px); }
+
+        /* ── Amortization table ── */
+        .amort-table {
+            width: 100%; border-collapse: collapse; font-size: 0.85rem;
+        }
+        .amort-table th, .amort-table td {
+            padding: 0.55rem 0.65rem; text-align: right;
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+        }
+        .amort-table th:first-child, .amort-table td:first-child { text-align: left; }
+        .amort-table th {
+            font-weight: 700; font-size: 0.68rem; text-transform: uppercase;
+            letter-spacing: 0.04em; color: var(--text-secondary);
+            position: sticky; top: 0; background: var(--card-bg); z-index: 1;
+        }
+        .amort-table .year-row td {
+            font-weight: 700; background: rgba(37,99,235,0.03);
+        }
+        .amort-scroll {
+            max-height: 420px; overflow-y: auto; overflow-x: auto;
+            border: 1px solid rgba(0,0,0,0.06); border-radius: 8px;
+        }
+
+        /* ── Charts row ── */
+        .charts-row {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        /* ── IO bar ── */
+        .io-bar {
+            display: flex; gap: 0.65rem; flex-wrap: wrap; align-items: center;
+            margin-top: 1.5rem; padding-top: 1.25rem;
+            border-top: 1px solid rgba(0,0,0,0.06);
+        }
+        .io-bar button {
+            display: inline-flex; align-items: center; gap: 0.4rem;
+            padding: 0.5rem 1rem; font-size: 0.82rem; font-weight: 600;
+            font-family: 'Inter', system-ui, sans-serif; color: var(--accent);
+            background: var(--card-bg); border: 1.5px solid rgba(0,0,0,0.1);
+            border-radius: 8px; cursor: pointer; transition: all 0.2s;
+        }
+        .io-bar button:hover { border-color: var(--accent); background: rgba(37,99,235,0.04); }
+        .io-feedback {
+            font-size: 0.8rem; font-weight: 600; margin-left: 0.5rem;
+            opacity: 0; transition: opacity 0.3s;
+        }
+        .io-feedback.visible { opacity: 1; }
+        .io-feedback.success { color: #16a34a; }
+        .io-feedback.error { color: #dc2626; }
+
+        /* ── Dark mode ── */
+        @media (prefers-color-scheme: dark) {
+            .scenario-card { background: rgba(255,255,255,0.02); border-color: rgba(255,255,255,0.08); }
+            .toggle-slider { background: rgba(255,255,255,0.15); }
+            .amort-table th, .amort-table td { border-bottom-color: rgba(255,255,255,0.06); }
+            .amort-table .year-row td { background: rgba(96,165,250,0.06); }
+            .amort-scroll { border-color: rgba(255,255,255,0.08); }
+            .io-bar button { border-color: rgba(255,255,255,0.12); }
+            .io-bar { border-top-color: rgba(255,255,255,0.08); }
+        }
+
+        /* ── Tablet ── */
+        @media (max-width: 768px) {
+            .charts-row { grid-template-columns: 1fr; }
+        }
+
+        /* ── Mobile ── */
+        @media (max-width: 600px) {
+            .model-tabs {
+                overflow-x: auto; -webkit-overflow-scrolling: touch;
+                flex-wrap: nowrap; gap: 0;
+            }
+            .model-tab {
+                padding: 0.65rem 0.85rem; font-size: 0.82rem;
+                min-height: 44px; flex-shrink: 0;
+            }
+            .scenario-card { padding: 1rem; }
+            .amort-table { font-size: 0.78rem; min-width: 520px; }
+            .amort-table th, .amort-table td { padding: 0.45rem 0.4rem; white-space: nowrap; }
+            .amort-scroll { max-height: 320px; }
+            .io-bar { flex-direction: column; align-items: stretch; }
+            .io-bar button { justify-content: center; min-height: 44px; width: 100%; }
+            .io-feedback { margin: 0; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <my-header></my-header>
+    <a href="/tools/" class="back-link">&larr; All Tools &amp; Calculators</a>
+
+    <section class="page-intro">
+        <p class="subtitle">Personal Finance</p>
+        <h1>Mortgage Refinance &amp; Early Payoff</h1>
+        <p>Compare your current mortgage against a refinance or early payoff strategies. See exactly how much interest you'll save and when you'll be debt-free.</p>
+    </section>
+
+    <div class="calc-form">
+        <!-- Tabs -->
+        <div class="model-tabs">
+            <button class="model-tab active" onclick="switchTab('current')">Current Loan</button>
+            <button class="model-tab" onclick="switchTab('scenarios')">Scenarios</button>
+            <button class="model-tab" onclick="switchTab('results')">Results</button>
+        </div>
+
+        <!-- ═══ TAB 1: CURRENT LOAN ═══ -->
+        <div id="tab-current" class="tab-panel active">
+            <div class="scenario-card">
+                <h3><span class="scenario-badge badge-current">Current</span> Your Existing Mortgage</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Original Loan Amount</label>
+                        <input type="number" id="origLoan" value="400000" min="0" step="1000">
+                    </div>
+                    <div class="form-group">
+                        <label>Current Balance</label>
+                        <input type="number" id="currentBalance" value="350000" min="0" step="1000">
+                        <span class="hint">Leave blank to auto-calculate from payments made</span>
+                    </div>
+                    <div class="form-group">
+                        <label>Interest Rate (%)</label>
+                        <input type="number" id="currentRate" value="6.5" min="0" max="20" step="0.125">
+                    </div>
+                    <div class="form-group">
+                        <label>Original Term (years)</label>
+                        <select id="currentTerm">
+                            <option value="30" selected>30 years</option>
+                            <option value="20">20 years</option>
+                            <option value="15">15 years</option>
+                            <option value="10">10 years</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Payments Already Made</label>
+                        <input type="number" id="paymentsMade" value="36" min="0" max="360">
+                        <span class="hint">Number of monthly payments completed</span>
+                    </div>
+                    <div class="form-group">
+                        <label>Monthly Escrow (Tax + Insurance)</label>
+                        <input type="number" id="escrow" value="450" min="0" step="10">
+                        <span class="hint">Not included in interest calculations</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══ TAB 2: SCENARIOS ═══ -->
+        <div id="tab-scenarios" class="tab-panel">
+            <!-- Refinance -->
+            <div class="scenario-card">
+                <h3><span class="scenario-badge badge-refi">Refinance</span> New Loan Terms</h3>
+                <div class="toggle-row">
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="refiEnabled" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <span class="toggle-label">Include refinance comparison</span>
+                </div>
+                <div id="refiFields">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>New Interest Rate (%)</label>
+                            <input type="number" id="refiRate" value="5.75" min="0" max="20" step="0.125">
+                        </div>
+                        <div class="form-group">
+                            <label>New Term (years)</label>
+                            <select id="refiTerm">
+                                <option value="30">30 years</option>
+                                <option value="20">20 years</option>
+                                <option value="15" selected>15 years</option>
+                                <option value="10">10 years</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Closing Costs</label>
+                            <input type="number" id="refiClosing" value="6000" min="0" step="100">
+                        </div>
+                        <div class="form-group">
+                            <label>Roll Closing into Loan?</label>
+                            <select id="refiRollClosing">
+                                <option value="no" selected>No — pay upfront</option>
+                                <option value="yes">Yes — add to balance</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Cash-Out Amount</label>
+                            <input type="number" id="refiCashOut" value="0" min="0" step="1000">
+                            <span class="hint">Additional cash taken from equity</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Early payoff strategies -->
+            <div class="scenario-card">
+                <h3><span class="scenario-badge badge-extra">Accelerate</span> Early Payoff Strategies</h3>
+                <div class="toggle-row">
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="extraEnabled" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <span class="toggle-label">Include early payoff strategies</span>
+                </div>
+                <div id="extraFields">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Extra Monthly Payment</label>
+                            <input type="number" id="extraMonthly" value="500" min="0" step="50">
+                        </div>
+                        <div class="form-group">
+                            <label>Biweekly Payments?</label>
+                            <select id="biweekly">
+                                <option value="no" selected>No — standard monthly</option>
+                                <option value="yes">Yes — pay half every 2 weeks</option>
+                            </select>
+                            <span class="hint">Biweekly = 26 half-payments = 13 full payments/year</span>
+                        </div>
+                        <div class="form-group">
+                            <label>One-Time Lump Sum</label>
+                            <input type="number" id="lumpSum" value="0" min="0" step="1000">
+                        </div>
+                        <div class="form-group">
+                            <label>Lump Sum Applied In Month #</label>
+                            <input type="number" id="lumpSumMonth" value="1" min="1" max="360">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══ TAB 3: RESULTS ═══ -->
+        <div id="tab-results" class="tab-panel">
+            <div id="resultsArea"></div>
+        </div>
+
+        <!-- Import / Export -->
+        <div class="io-bar">
+            <button onclick="exportJSON()">&#x2B07; Export JSON</button>
+            <button onclick="document.getElementById('importFile').click()">&#x2B06; Import JSON</button>
+            <input type="file" id="importFile" accept=".json" style="display:none" onchange="handleImport(event)">
+            <span id="ioFeedback" class="io-feedback"></span>
+        </div>
+
+        <!-- Calculate -->
+        <button class="calc-btn" onclick="calculate(); switchTab('results');">
+            Calculate &amp; Compare
+        </button>
+    </div>
+
+    <my-footer></my-footer>
+</div>
+
+<script>
+/* ============================================================
+   MORTGAGE REFINANCE & EARLY PAYOFF — CLIENT-SIDE ENGINE
+   ============================================================ */
+const $ = id => document.getElementById(id);
+const val = id => parseFloat($(id)?.value) || 0;
+const fmt = v => !isFinite(v) ? '$0' : '$' + Math.round(v).toLocaleString('en-US');
+const fmtD = (v, d) => !isFinite(v) ? '$0' : '$' + v.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+
+function escAttr(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;')
+        .replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+let charts = {};
+
+// ── Tab switching ──
+function switchTab(name) {
+    document.querySelectorAll('.model-tab').forEach(btn => {
+        btn.classList.toggle('active', btn.textContent.toLowerCase().includes(name.substring(0, 4)));
+    });
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    const panel = $('tab-' + name);
+    if (panel) panel.classList.add('active');
+}
+
+// ── Toggle visibility ──
+$('refiEnabled').addEventListener('change', function() {
+    $('refiFields').style.display = this.checked ? 'block' : 'none';
+});
+$('extraEnabled').addEventListener('change', function() {
+    $('extraFields').style.display = this.checked ? 'block' : 'none';
+});
+
+// ── Amortization engine ──
+function calcMonthlyPayment(principal, annualRate, termMonths) {
+    if (annualRate === 0) return principal / termMonths;
+    const r = annualRate / 100 / 12;
+    return principal * (r * Math.pow(1 + r, termMonths)) / (Math.pow(1 + r, termMonths) - 1);
+}
+
+function buildAmortization(principal, annualRate, termMonths, extraMonthly, biweekly, lumpSum, lumpSumMonth) {
+    const r = annualRate / 100 / 12;
+    const basePayment = calcMonthlyPayment(principal, annualRate, termMonths);
+    let balance = principal;
+    let totalInterest = 0;
+    let totalPaid = 0;
+    const schedule = [];
+
+    // Biweekly: 26 half-payments = 13 full payments/year = 1 extra payment/year
+    const biweeklyExtra = biweekly ? basePayment / 12 : 0;
+
+    for (let month = 1; month <= termMonths && balance > 0.01; month++) {
+        const interestPayment = balance * r;
+        let principalPayment = basePayment - interestPayment;
+        let extra = extraMonthly + biweeklyExtra;
+
+        // Lump sum
+        if (month === lumpSumMonth) extra += lumpSum;
+
+        // Don't overpay
+        if (principalPayment + extra > balance) {
+            extra = Math.max(0, balance - principalPayment);
+            principalPayment = balance - extra;
+        }
+        if (principalPayment > balance) principalPayment = balance;
+
+        const totalPayment = interestPayment + principalPayment + extra;
+        balance -= (principalPayment + extra);
+        if (balance < 0.01) balance = 0;
+
+        totalInterest += interestPayment;
+        totalPaid += totalPayment;
+
+        schedule.push({
+            month,
+            payment: totalPayment,
+            principal: principalPayment + extra,
+            interest: interestPayment,
+            extra: extra,
+            balance
+        });
+
+        if (balance === 0) break;
+    }
+
+    return { schedule, totalInterest, totalPaid, months: schedule.length, monthlyPayment: basePayment };
+}
+
+// ── Main calculation ──
+function calculate() {
+    try {
+        const origLoan = val('origLoan');
+        const currentRate = val('currentRate');
+        const currentTermMonths = parseInt($('currentTerm').value) * 12;
+        const paymentsMade = val('paymentsMade');
+        const escrow = val('escrow');
+
+        // Calculate current balance if not manually overridden
+        let currentBalance = val('currentBalance');
+        if (!currentBalance && origLoan > 0) {
+            // Calculate remaining balance after payments made
+            const r = currentRate / 100 / 12;
+            const pmt = calcMonthlyPayment(origLoan, currentRate, currentTermMonths);
+            if (r > 0) {
+                currentBalance = origLoan * Math.pow(1 + r, paymentsMade) - pmt * (Math.pow(1 + r, paymentsMade) - 1) / r;
+            } else {
+                currentBalance = origLoan - pmt * paymentsMade;
+            }
+            currentBalance = Math.max(0, currentBalance);
+        }
+
+        const remainingMonths = currentTermMonths - paymentsMade;
+
+        // 1. Current path — no changes
+        const current = buildAmortization(currentBalance, currentRate, remainingMonths, 0, false, 0, 0);
+
+        // 2. Refinance
+        let refi = null;
+        if ($('refiEnabled').checked) {
+            const refiRate = val('refiRate');
+            const refiTermMonths = parseInt($('refiTerm').value) * 12;
+            const closingCosts = val('refiClosing');
+            const rollClosing = $('refiRollClosing').value === 'yes';
+            const cashOut = val('refiCashOut');
+
+            let refiBalance = currentBalance + cashOut;
+            if (rollClosing) refiBalance += closingCosts;
+
+            const refiAmort = buildAmortization(refiBalance, refiRate, refiTermMonths, 0, false, 0, 0);
+            const refiTotalCost = refiAmort.totalPaid + (rollClosing ? 0 : closingCosts);
+
+            refi = {
+                ...refiAmort,
+                closingCosts,
+                cashOut,
+                refiBalance,
+                totalCostWithClosing: refiTotalCost,
+                interestSavings: current.totalInterest - refiAmort.totalInterest,
+                netSavings: current.totalPaid - refiTotalCost,
+                breakEvenMonths: closingCosts > 0 ? Math.ceil(closingCosts / (current.monthlyPayment - refiAmort.monthlyPayment)) : 0
+            };
+        }
+
+        // 3. Early payoff
+        let early = null;
+        if ($('extraEnabled').checked) {
+            const extraMonthly = val('extraMonthly');
+            const biweekly = $('biweekly').value === 'yes';
+            const lumpSum = val('lumpSum');
+            const lumpSumMonth = Math.max(1, Math.round(val('lumpSumMonth')));
+
+            const earlyAmort = buildAmortization(currentBalance, currentRate, remainingMonths, extraMonthly, biweekly, lumpSum, lumpSumMonth);
+
+            early = {
+                ...earlyAmort,
+                monthsSaved: current.months - earlyAmort.months,
+                interestSavings: current.totalInterest - earlyAmort.totalInterest
+            };
+        }
+
+        renderResults(current, refi, early, currentBalance, escrow, remainingMonths);
+    } catch (err) {
+        $('resultsArea').innerHTML = '<div style="color:#dc2626; padding:1rem; text-align:center;">Error: ' + escAttr(err.message) + '</div>';
+        console.error(err);
+    }
+}
+
+// ── Render results ──
+function renderResults(current, refi, early, balance, escrow, remainingMonths) {
+    let html = '';
+
+    // ── Hero card — best savings ──
+    const scenarios = [
+        { label: 'Current Path', savings: 0, months: current.months },
+    ];
+    if (refi) scenarios.push({ label: 'Refinance', savings: refi.netSavings, months: refi.months });
+    if (early) scenarios.push({ label: 'Early Payoff', savings: early.interestSavings, months: early.months });
+
+    const bestSavings = Math.max(...scenarios.map(s => s.savings));
+    const best = scenarios.find(s => s.savings === bestSavings && s.savings > 0);
+
+    if (best) {
+        html += `
+            <div class="results-hero positive">
+                <div class="hero-value">${fmt(best.savings)}</div>
+                <div class="hero-sub">Interest saved with ${best.label}</div>
+                <div class="hero-label">Payoff in ${Math.floor(best.months / 12)}y ${best.months % 12}m vs. ${Math.floor(current.months / 12)}y ${current.months % 12}m current</div>
+            </div>
+        `;
+    }
+
+    // ── Stat cards ──
+    html += '<div class="stat-row">';
+    html += `<div class="stat-card"><div class="val">${fmtD(current.monthlyPayment, 2)}</div><div class="lbl">Current Payment</div></div>`;
+    if (refi) {
+        html += `<div class="stat-card"><div class="val ${refi.monthlyPayment < current.monthlyPayment ? 'green' : 'red'}">${fmtD(refi.monthlyPayment, 2)}</div><div class="lbl">Refi Payment</div></div>`;
+    }
+    html += `<div class="stat-card"><div class="val">${fmt(current.totalInterest)}</div><div class="lbl">Current Total Interest</div></div>`;
+    if (refi) {
+        html += `<div class="stat-card"><div class="val green">${fmt(refi.interestSavings)}</div><div class="lbl">Refi Interest Saved</div></div>`;
+    }
+    if (early) {
+        html += `<div class="stat-card"><div class="val green">${fmt(early.interestSavings)}</div><div class="lbl">Early Payoff Interest Saved</div></div>`;
+        html += `<div class="stat-card"><div class="val green">${early.monthsSaved} mo</div><div class="lbl">Months Saved</div></div>`;
+    }
+    if (refi && refi.breakEvenMonths > 0 && isFinite(refi.breakEvenMonths) && refi.breakEvenMonths > 0) {
+        html += `<div class="stat-card"><div class="val">${refi.breakEvenMonths} mo</div><div class="lbl">Refi Break-Even</div></div>`;
+    }
+    html += '</div>';
+
+    // ── Comparison table ──
+    html += '<div class="chart-card"><h3>Side-by-Side Comparison</h3>';
+    html += '<div style="overflow-x:auto;"><table class="amort-table">';
+    html += '<thead><tr><th>Metric</th><th>Current</th>';
+    if (refi) html += '<th>Refinance</th>';
+    if (early) html += '<th>Early Payoff</th>';
+    html += '</tr></thead><tbody>';
+
+    const row = (label, curVal, refiVal, earlyVal) => {
+        html += `<tr><td>${label}</td><td>${curVal}</td>`;
+        if (refi) html += `<td>${refiVal || '—'}</td>`;
+        if (early) html += `<td>${earlyVal || '—'}</td>`;
+        html += '</tr>';
+    };
+
+    row('Monthly P&I', fmtD(current.monthlyPayment, 2), refi ? fmtD(refi.monthlyPayment, 2) : null, early ? fmtD(current.monthlyPayment, 2) + ' + extra' : null);
+    row('Total w/ Escrow', fmtD(current.monthlyPayment + escrow, 2), refi ? fmtD(refi.monthlyPayment + escrow, 2) : null, early ? 'Varies' : null);
+    row('Loan Balance', fmt(balance), refi ? fmt(refi.refiBalance) : null, fmt(balance));
+    row('Total Interest', fmt(current.totalInterest), refi ? fmt(refi.totalInterest) : null, early ? fmt(early.totalInterest) : null);
+    row('Total Paid', fmt(current.totalPaid), refi ? fmt(refi.totalCostWithClosing) : null, early ? fmt(early.totalPaid) : null);
+    row('Payoff Timeline', Math.floor(current.months / 12) + 'y ' + (current.months % 12) + 'm',
+        refi ? Math.floor(refi.months / 12) + 'y ' + (refi.months % 12) + 'm' : null,
+        early ? Math.floor(early.months / 12) + 'y ' + (early.months % 12) + 'm' : null);
+    row('Interest Saved', '—', refi ? fmt(refi.interestSavings) : null, early ? fmt(early.interestSavings) : null);
+
+    if (refi) {
+        row('Closing Costs', '—', fmt(refi.closingCosts), '—');
+        row('Net Savings', '—', fmt(refi.netSavings), '—');
+    }
+
+    html += '</tbody></table></div></div>';
+
+    // ── Charts ──
+    html += '<div class="charts-row">';
+    html += '<div class="chart-card"><h3>Balance Over Time</h3><div class="chart-wrap"><canvas id="chartBalance"></canvas></div></div>';
+    html += '<div class="chart-card"><h3>Cumulative Interest</h3><div class="chart-wrap"><canvas id="chartInterest"></canvas></div></div>';
+    html += '</div>';
+
+    html += '<div class="charts-row">';
+    html += '<div class="chart-card"><h3>Monthly Payment Breakdown</h3><div class="chart-wrap"><canvas id="chartPayment"></canvas></div></div>';
+    html += '<div class="chart-card"><h3>Total Cost Comparison</h3><div class="chart-wrap"><canvas id="chartTotal"></canvas></div></div>';
+    html += '</div>';
+
+    // ── Amortization schedule ──
+    html += '<div class="chart-card"><h3>Amortization Schedule — Current Loan</h3>';
+    html += '<div class="amort-scroll"><table class="amort-table">';
+    html += '<thead><tr><th>Month</th><th>Payment</th><th>Principal</th><th>Interest</th><th>Balance</th></tr></thead><tbody>';
+
+    // Show yearly summaries + key months
+    let yearPrincipal = 0, yearInterest = 0, yearPayment = 0;
+    const sched = early && early.schedule.length > 0 ? current.schedule : current.schedule;
+    for (let i = 0; i < sched.length; i++) {
+        const s = sched[i];
+        yearPrincipal += s.principal;
+        yearInterest += s.interest;
+        yearPayment += s.payment;
+
+        if ((i + 1) % 12 === 0 || i === sched.length - 1) {
+            const yr = Math.ceil(s.month / 12);
+            html += `<tr class="year-row"><td>Year ${yr}</td><td>${fmt(yearPayment)}</td><td>${fmt(yearPrincipal)}</td><td>${fmt(yearInterest)}</td><td>${fmt(s.balance)}</td></tr>`;
+            yearPrincipal = 0; yearInterest = 0; yearPayment = 0;
+        }
+    }
+    html += '</tbody></table></div></div>';
+
+    $('resultsArea').innerHTML = html;
+    setTimeout(() => renderCharts(current, refi, early), 50);
+}
+
+// ── Charts ──
+function renderCharts(current, refi, early) {
+    Object.values(charts).forEach(c => { try { c.destroy(); } catch(e) {} });
+    charts = {};
+
+    const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const textColor = isDark ? '#d1d5db' : '#6b7280';
+    const gridColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
+    const fontOpts = { family: 'Inter', size: 11 };
+
+    const commonOpts = {
+        responsive: true,
+        interaction: { intersect: false, mode: 'index' },
+        plugins: {
+            legend: { labels: { color: textColor, font: fontOpts } },
+            tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + fmt(ctx.raw) } }
+        },
+        scales: {
+            x: { ticks: { color: textColor, font: fontOpts, maxTicksLimit: 10 }, grid: { color: gridColor } },
+            y: { ticks: { color: textColor, font: fontOpts, callback: v => '$' + (v / 1000).toFixed(0) + 'K' }, grid: { color: gridColor } }
+        }
+    };
+
+    // Build monthly labels (years)
+    const maxMonths = Math.max(current.months, refi ? refi.months : 0, early ? early.months : 0);
+    const labels = [];
+    for (let i = 0; i < maxMonths; i += 12) labels.push('Yr ' + Math.floor(i / 12 + 1));
+
+    // Sample data at yearly intervals
+    const sampleYearly = (schedule) => {
+        const data = [];
+        for (let i = 11; i < maxMonths; i += 12) {
+            if (i < schedule.length) {
+                data.push(schedule[i].balance);
+            } else {
+                data.push(0);
+            }
+        }
+        return data;
+    };
+
+    const sampleCumInterest = (schedule) => {
+        const data = [];
+        let cum = 0;
+        for (let m = 0; m < maxMonths; m++) {
+            if (m < schedule.length) cum += schedule[m].interest;
+            if ((m + 1) % 12 === 0) data.push(cum);
+        }
+        return data;
+    };
+
+    // 1. Balance over time
+    const el1 = $('chartBalance');
+    if (el1) {
+        const datasets = [
+            { label: 'Current', data: sampleYearly(current.schedule), borderColor: '#6b7280', backgroundColor: 'rgba(107,114,128,0.1)', fill: true, tension: 0.3 }
+        ];
+        if (refi) datasets.push({ label: 'Refinance', data: sampleYearly(refi.schedule), borderColor: '#2563eb', backgroundColor: 'rgba(37,99,235,0.1)', fill: true, tension: 0.3 });
+        if (early) datasets.push({ label: 'Early Payoff', data: sampleYearly(early.schedule), borderColor: '#16a34a', backgroundColor: 'rgba(22,163,74,0.1)', fill: true, tension: 0.3 });
+
+        charts.balance = new Chart(el1, { type: 'line', data: { labels, datasets }, options: commonOpts });
+    }
+
+    // 2. Cumulative interest
+    const el2 = $('chartInterest');
+    if (el2) {
+        const datasets = [
+            { label: 'Current', data: sampleCumInterest(current.schedule), borderColor: '#6b7280', backgroundColor: 'rgba(107,114,128,0.1)', fill: true, tension: 0.3 }
+        ];
+        if (refi) datasets.push({ label: 'Refinance', data: sampleCumInterest(refi.schedule), borderColor: '#2563eb', backgroundColor: 'rgba(37,99,235,0.1)', fill: true, tension: 0.3 });
+        if (early) datasets.push({ label: 'Early Payoff', data: sampleCumInterest(early.schedule), borderColor: '#16a34a', backgroundColor: 'rgba(22,163,74,0.1)', fill: true, tension: 0.3 });
+
+        charts.interest = new Chart(el2, { type: 'line', data: { labels, datasets }, options: commonOpts });
+    }
+
+    // 3. Monthly payment breakdown (first month — principal vs interest)
+    const el3 = $('chartPayment');
+    if (el3) {
+        const barLabels = ['Current'];
+        const principalData = [current.schedule[0]?.principal || 0];
+        const interestData = [current.schedule[0]?.interest || 0];
+
+        if (refi) {
+            barLabels.push('Refinance');
+            principalData.push(refi.schedule[0]?.principal || 0);
+            interestData.push(refi.schedule[0]?.interest || 0);
+        }
+        if (early) {
+            barLabels.push('Early Payoff');
+            principalData.push(early.schedule[0]?.principal || 0);
+            interestData.push(early.schedule[0]?.interest || 0);
+        }
+
+        charts.payment = new Chart(el3, {
+            type: 'bar',
+            data: {
+                labels: barLabels,
+                datasets: [
+                    { label: 'Principal', data: principalData, backgroundColor: '#2563eb99', borderColor: '#2563eb', borderWidth: 1 },
+                    { label: 'Interest', data: interestData, backgroundColor: '#dc262699', borderColor: '#dc2626', borderWidth: 1 }
+                ]
+            },
+            options: {
+                ...commonOpts,
+                scales: {
+                    ...commonOpts.scales,
+                    x: { ...commonOpts.scales.x, stacked: true },
+                    y: { ...commonOpts.scales.y, stacked: true }
+                }
+            }
+        });
+    }
+
+    // 4. Total cost comparison
+    const el4 = $('chartTotal');
+    if (el4) {
+        const barLabels = ['Current'];
+        const totalPaidData = [current.totalPaid];
+        const totalInterestData = [current.totalInterest];
+        const colors = ['#6b7280'];
+
+        if (refi) {
+            barLabels.push('Refinance');
+            totalPaidData.push(refi.totalCostWithClosing);
+            totalInterestData.push(refi.totalInterest);
+            colors.push('#2563eb');
+        }
+        if (early) {
+            barLabels.push('Early Payoff');
+            totalPaidData.push(early.totalPaid);
+            totalInterestData.push(early.totalInterest);
+            colors.push('#16a34a');
+        }
+
+        charts.total = new Chart(el4, {
+            type: 'bar',
+            data: {
+                labels: barLabels,
+                datasets: [
+                    { label: 'Total Paid', data: totalPaidData, backgroundColor: colors.map(c => c + '99'), borderColor: colors, borderWidth: 2 }
+                ]
+            },
+            options: commonOpts
+        });
+    }
+}
+
+// ── Import / Export ──
+function buildExportData() {
+    return {
+        version: 1, tool: 'mortgage-calc', exportedAt: new Date().toISOString(),
+        current: {
+            origLoan: val('origLoan'), currentBalance: val('currentBalance'),
+            currentRate: val('currentRate'), currentTerm: $('currentTerm').value,
+            paymentsMade: val('paymentsMade'), escrow: val('escrow')
+        },
+        refi: {
+            enabled: $('refiEnabled').checked,
+            rate: val('refiRate'), term: $('refiTerm').value,
+            closing: val('refiClosing'), rollClosing: $('refiRollClosing').value,
+            cashOut: val('refiCashOut')
+        },
+        early: {
+            enabled: $('extraEnabled').checked,
+            extraMonthly: val('extraMonthly'), biweekly: $('biweekly').value,
+            lumpSum: val('lumpSum'), lumpSumMonth: val('lumpSumMonth')
+        }
+    };
+}
+
+function exportJSON() {
+    const blob = new Blob([JSON.stringify(buildExportData(), null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'mortgage-scenario.json';
+    document.body.appendChild(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); document.body.removeChild(a); }, 100);
+    showFeedback('success', 'Exported mortgage scenario.');
+}
+
+function handleImport(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    event.target.value = '';
+    const reader = new FileReader();
+    reader.onload = e => {
+        try {
+            const data = JSON.parse(e.target.result);
+            importJSON(data);
+            showFeedback('success', 'Imported mortgage scenario.');
+        } catch (err) {
+            showFeedback('error', 'Import failed: ' + err.message);
+        }
+    };
+    reader.readAsText(file);
+}
+
+function importJSON(data) {
+    if (!data.version || data.tool !== 'mortgage-calc') throw new Error('Invalid file format.');
+    const c = data.current || {};
+    if (c.origLoan != null) $('origLoan').value = c.origLoan;
+    if (c.currentBalance != null) $('currentBalance').value = c.currentBalance;
+    if (c.currentRate != null) $('currentRate').value = c.currentRate;
+    if (c.currentTerm) $('currentTerm').value = c.currentTerm;
+    if (c.paymentsMade != null) $('paymentsMade').value = c.paymentsMade;
+    if (c.escrow != null) $('escrow').value = c.escrow;
+
+    const r = data.refi || {};
+    $('refiEnabled').checked = r.enabled !== false;
+    $('refiFields').style.display = r.enabled !== false ? 'block' : 'none';
+    if (r.rate != null) $('refiRate').value = r.rate;
+    if (r.term) $('refiTerm').value = r.term;
+    if (r.closing != null) $('refiClosing').value = r.closing;
+    if (r.rollClosing) $('refiRollClosing').value = r.rollClosing;
+    if (r.cashOut != null) $('refiCashOut').value = r.cashOut;
+
+    const x = data.early || {};
+    $('extraEnabled').checked = x.enabled !== false;
+    $('extraFields').style.display = x.enabled !== false ? 'block' : 'none';
+    if (x.extraMonthly != null) $('extraMonthly').value = x.extraMonthly;
+    if (x.biweekly) $('biweekly').value = x.biweekly;
+    if (x.lumpSum != null) $('lumpSum').value = x.lumpSum;
+    if (x.lumpSumMonth != null) $('lumpSumMonth').value = x.lumpSumMonth;
+}
+
+function showFeedback(type, msg) {
+    const el = $('ioFeedback');
+    if (!el) return;
+    el.textContent = msg;
+    el.className = 'io-feedback visible ' + type;
+    setTimeout(() => el.classList.remove('visible'), 4000);
+}
+</script>
+</body>
+</html>

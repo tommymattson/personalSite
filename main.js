@@ -13,7 +13,6 @@ class MyHeader extends HTMLElement {
             <div class="nav-links">
                 <a href="/" id="link-home">Home</a>
                 <a href="/resume/" id="link-resume">Resume</a>
-                <a href="/calculators/" id="link-calc">Calculators</a>
                 <a href="/tools/" id="link-tools">Tools</a>
             </div>
         </nav>

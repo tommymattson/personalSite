@@ -155,13 +155,68 @@
             .io-bar button { border-color: rgba(255,255,255,0.12); }
         }
 
+        /* ── Charts row ── */
+        .charts-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        /* ── Tablet ── */
+        @media (max-width: 768px) {
+            .role-grid { grid-template-columns: 1fr 1fr; }
+        }
+
         /* ── Mobile ── */
         @media (max-width: 600px) {
+            .model-tabs {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                flex-wrap: nowrap;
+                gap: 0;
+                padding-bottom: 2px;
+            }
+            .model-tab {
+                padding: 0.65rem 0.9rem;
+                font-size: 0.82rem;
+                min-height: 44px;
+                flex-shrink: 0;
+            }
             .role-grid { grid-template-columns: 1fr; }
-            .cost-item { grid-template-columns: 1fr 1fr; }
-            .cost-item .cost-applies { grid-column: 1 / -1; }
-            .comparison-table { font-size: 0.78rem; }
-            .comparison-table th, .comparison-table td { padding: 0.5rem 0.4rem; }
+            .role-card { padding: 1rem; }
+            .role-card-title { font-size: 0.92rem; }
+            .cost-item {
+                grid-template-columns: 1fr;
+            }
+            .cost-item .cost-applies { grid-column: auto; }
+            .comparison-table {
+                font-size: 0.8rem;
+                min-width: 420px;
+            }
+            .comparison-table th, .comparison-table td {
+                padding: 0.5rem 0.35rem;
+                white-space: nowrap;
+            }
+            .io-bar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .io-bar button {
+                justify-content: center;
+                min-height: 44px;
+                width: 100%;
+            }
+            .io-feedback {
+                margin-left: 0;
+                text-align: center;
+            }
+            .charts-row {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            .footnotes { padding: 0.75rem 1rem; font-size: 0.72rem; }
+            .metro-info { font-size: 0.7rem; }
         }
     </style>
 </head>
@@ -169,7 +224,7 @@
 <div class="container">
     <my-header></my-header>
 
-    <a href="../" class="back-link">&larr; All Tools</a>
+    <a href="/tools/" class="back-link">&larr; All Tools &amp; Calculators</a>
 
     <section class="page-intro">
         <p class="subtitle">Workforce Planning</p>
@@ -892,7 +947,7 @@ function renderResults(r) {
 
     // ── Charts ──
     html += `
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1.5rem; margin-bottom:1.5rem;">
+        <div class="charts-row">
             <div class="chart-card"><h3>Total Cost Breakdown</h3><div class="chart-wrap"><canvas id="chartBreakdown"></canvas></div></div>
             <div class="chart-card"><h3>Turnover Impact</h3><div class="chart-wrap"><canvas id="chartTurnover"></canvas></div></div>
         </div>

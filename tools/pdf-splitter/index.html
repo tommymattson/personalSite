@@ -295,9 +295,11 @@
         }
 
         @media (max-width: 600px) {
-            .pages-grid { grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); }
-            .steps .step { font-size: 0.68rem; padding: 0.5rem 0.25rem; }
+            .pages-grid { grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 0.5rem; }
+            .steps { gap: 0.35rem; }
+            .steps .step { font-size: 0.72rem; padding: 0.55rem 0.35rem; min-height: 44px; }
             .upload-zone { padding: 2rem 1rem; }
+            .upload-zone h3 { font-size: 1rem; }
         }
     </style>
 </head>
@@ -305,7 +307,7 @@
 
 <div class="container">
     <my-header></my-header>
-    <a href="../" class="back-link">&larr; All Tools</a>
+    <a href="/tools/" class="back-link">&larr; All Tools &amp; Calculators</a>
 
     <section class="page-intro">
         <div class="subtitle">PDF</div>

@@ -242,7 +242,15 @@
         }
         @media (max-width: 600px) {
             .col-list { grid-template-columns: 1fr; }
-            .steps .step { font-size: 0.68rem; padding: 0.5rem 0.25rem; }
+            .steps { gap: 0.35rem; }
+            .steps .step { font-size: 0.72rem; padding: 0.55rem 0.35rem; min-height: 44px; }
+            .json-textarea { min-height: 150px; font-size: 0.85rem; }
+            .action-btn { min-height: 44px; padding: 0.7rem 1rem; font-size: 0.9rem; }
+            .export-bar { flex-direction: column; }
+            .export-bar .action-btn { width: 100%; justify-content: center; }
+            .preview-wrap { max-height: 350px; }
+            .preview-table td { max-width: 180px; font-size: 0.8rem; }
+            .preview-table th { font-size: 0.68rem; padding: 0.5rem; }
         }
     </style>
 </head>
@@ -250,7 +258,7 @@
 
 <div class="container">
     <my-header></my-header>
-    <a href="../" class="back-link">&larr; All Tools</a>
+    <a href="/tools/" class="back-link">&larr; All Tools &amp; Calculators</a>
 
     <section class="page-intro">
         <div class="subtitle">Data conversion</div>
