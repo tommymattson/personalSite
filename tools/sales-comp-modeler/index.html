@@ -1,0 +1,1269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complex Sales Compensation Modeler | Thomas Mattson</title>
+    <link rel="stylesheet" href="../../styles.css">
+    <link rel="stylesheet" href="../../calculators/calculators.css">
+    <script src="../../main.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <style>
+        /* ── Tabs ── */
+        .model-tabs {
+            display: flex; gap: 0.4rem; margin-bottom: 1.5rem;
+            flex-wrap: wrap; border-bottom: 2px solid rgba(0,0,0,0.06);
+            padding-bottom: 0;
+        }
+        .model-tab {
+            padding: 0.6rem 1.1rem; font-size: 0.82rem; font-weight: 700;
+            color: var(--text-secondary); background: none; border: none;
+            cursor: pointer; font-family: 'Inter', system-ui, sans-serif;
+            border-bottom: 3px solid transparent; margin-bottom: -2px;
+            transition: all 0.2s; white-space: nowrap;
+        }
+        .model-tab:hover { color: var(--accent); }
+        .model-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+
+        /* ── Role cards ── */
+        .role-card {
+            background: rgba(0,0,0,0.015); border: 1.5px solid rgba(0,0,0,0.08);
+            border-radius: 10px; padding: 1.25rem; margin-bottom: 0.85rem;
+            transition: border-color 0.15s;
+        }
+        .role-card:hover { border-color: rgba(0,0,0,0.15); }
+        .role-card-header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 0.85rem; gap: 0.75rem; flex-wrap: wrap;
+        }
+        .role-card-title { font-weight: 700; font-size: 1rem; }
+        .role-card-badge {
+            font-size: 0.68rem; font-weight: 700; padding: 0.15rem 0.55rem;
+            border-radius: 50px; text-transform: uppercase; letter-spacing: 0.03em;
+        }
+        .badge-bdr { background: rgba(245,158,11,0.12); color: #d97706; }
+        .badge-sdr { background: rgba(139,92,246,0.1); color: #8b5cf6; }
+        .badge-ae { background: rgba(37,99,235,0.1); color: #2563eb; }
+        .badge-sae { background: rgba(22,163,74,0.1); color: #16a34a; }
+        .badge-vp { background: rgba(220,38,38,0.1); color: #dc2626; }
+        .badge-exec { background: rgba(107,114,128,0.1); color: #6b7280; }
+        .badge-custom { background: rgba(37,99,235,0.06); color: var(--accent); }
+
+        .role-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 0.65rem;
+        }
+        .role-grid .form-group label { font-size: 0.72rem; }
+        .role-grid .form-group input,
+        .role-grid .form-group select {
+            padding: 0.5rem 0.65rem; font-size: 0.88rem; min-height: 38px;
+        }
+
+        /* ── Tier rows inside role ── */
+        .tier-section { margin-top: 0.75rem; }
+        .tier-section-title {
+            font-size: 0.78rem; font-weight: 700; color: var(--text-secondary);
+            text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.4rem;
+        }
+        .tier-row-sm {
+            display: grid; grid-template-columns: 1fr 1fr 1fr auto;
+            gap: 0.5rem; align-items: end; margin-bottom: 0.4rem;
+        }
+        .tier-row-sm input {
+            padding: 0.4rem 0.55rem; font-size: 0.82rem; min-height: 34px;
+            border: 1.5px solid rgba(0,0,0,0.12); border-radius: 6px;
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg-color); color: var(--text-primary);
+        }
+        .tier-row-sm input:focus {
+            outline: none; border-color: var(--accent);
+            box-shadow: 0 0 0 2px rgba(37,99,235,0.12);
+        }
+        .tier-row-sm .tier-label {
+            font-size: 0.68rem; font-weight: 600; color: var(--text-secondary);
+            text-transform: uppercase; margin-bottom: 0.2rem;
+        }
+        .tier-row-sm button {
+            background: none; border: none; color: #dc2626; cursor: pointer;
+            font-size: 1.1rem; padding: 0.3rem; min-width: 30px; min-height: 34px;
+            border-radius: 4px; display: flex; align-items: center; justify-content: center;
+        }
+        .tier-row-sm button:hover { background: rgba(220,38,38,0.08); }
+
+        /* ── Incentive cards ── */
+        .incentive-card {
+            background: rgba(0,0,0,0.015); border: 1.5px solid rgba(0,0,0,0.08);
+            border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 0.65rem;
+        }
+        .incentive-header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 0.65rem; gap: 0.5rem;
+        }
+        .incentive-type-badge {
+            font-size: 0.68rem; font-weight: 700; padding: 0.15rem 0.55rem;
+            border-radius: 50px;
+        }
+        .badge-spif { background: rgba(245,158,11,0.12); color: #d97706; }
+        .badge-club { background: rgba(139,92,246,0.12); color: #8b5cf6; }
+        .badge-award { background: rgba(22,163,74,0.12); color: #16a34a; }
+
+        .incentive-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 0.65rem;
+        }
+        .incentive-grid .form-group label { font-size: 0.72rem; }
+        .incentive-grid .form-group input,
+        .incentive-grid .form-group select {
+            padding: 0.5rem 0.65rem; font-size: 0.88rem; min-height: 38px;
+        }
+
+        /* ── Template picker ── */
+        .template-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 0.5rem; margin-bottom: 1rem;
+        }
+        .template-btn {
+            padding: 0.75rem 0.65rem; border: 1.5px solid rgba(0,0,0,0.1);
+            border-radius: 8px; background: var(--card-bg); cursor: pointer;
+            font-family: 'Inter', system-ui, sans-serif; text-align: center;
+            transition: all 0.15s;
+        }
+        .template-btn:hover { border-color: var(--accent); background: rgba(37,99,235,0.03); }
+        .template-btn .tmpl-title { font-weight: 700; font-size: 0.88rem; margin-bottom: 0.15rem; }
+        .template-btn .tmpl-sub { font-size: 0.72rem; color: var(--text-secondary); }
+
+        /* ── Scenario toggles ── */
+        .scenario-bar {
+            display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; align-items: center;
+        }
+        .scenario-bar label { font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); }
+        .scenario-bar input {
+            width: 60px; padding: 0.35rem 0.5rem; border: 1.5px solid rgba(0,0,0,0.12);
+            border-radius: 6px; font-size: 0.85rem; text-align: center;
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg-color); color: var(--text-primary);
+        }
+        .scenario-bar input:focus { outline: none; border-color: var(--accent); }
+
+        /* ── Results tables ── */
+        .comp-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+        .comp-table th {
+            font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.04em; color: var(--text-secondary);
+            padding: 0.5rem 0.65rem; text-align: right;
+            border-bottom: 2px solid rgba(0,0,0,0.08);
+            position: sticky; top: 0; background: var(--card-bg);
+        }
+        .comp-table th:first-child { text-align: left; }
+        .comp-table td {
+            padding: 0.55rem 0.65rem; text-align: right;
+            border-bottom: 1px solid rgba(0,0,0,0.04);
+        }
+        .comp-table td:first-child { text-align: left; font-weight: 600; }
+        .comp-table tr.total-row { font-weight: 700; border-top: 2px solid var(--accent); }
+        .comp-table tr.total-row td { border-bottom: none; }
+        .comp-table tr:hover td { background: rgba(37,99,235,0.02); }
+
+        /* ── Scenario columns ── */
+        .scenario-header { text-align: center !important; }
+        .scenario-group { border-left: 2px solid rgba(0,0,0,0.06); }
+
+        /* ── Action buttons ── */
+        .action-btn {
+            display: inline-flex; align-items: center; gap: 0.4rem;
+            padding: 0.5rem 1rem; font-family: 'Inter', system-ui, sans-serif;
+            font-size: 0.82rem; font-weight: 600; border-radius: 8px;
+            cursor: pointer; transition: all 0.2s; min-height: 40px;
+        }
+        .action-btn svg {
+            width: 16px; height: 16px; stroke: currentColor; fill: none;
+            stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+        }
+        .action-btn.primary { background: var(--accent); color: #fff; border: none; }
+        .action-btn.primary:hover { background: var(--accent-hover); transform: translateY(-1px); }
+        .action-btn.secondary { background: transparent; color: var(--accent); border: 1.5px solid rgba(0,0,0,0.12); }
+        .action-btn.secondary:hover { border-color: var(--accent); background: rgba(37,99,235,0.04); }
+
+        /* ── Responsive ── */
+        @media (max-width: 600px) {
+            .role-grid, .incentive-grid { grid-template-columns: 1fr 1fr; }
+            .tier-row-sm { grid-template-columns: 1fr 1fr auto; }
+            .tier-row-sm > div:first-child { grid-column: 1 / -2; }
+            .template-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+            .model-tabs { gap: 0; }
+            .model-tab { padding: 0.5rem 0.65rem; font-size: 0.75rem; }
+        }
+
+        /* ── Dark mode ── */
+        @media (prefers-color-scheme: dark) {
+            .role-card { border-color: rgba(255,255,255,0.1); background: rgba(255,255,255,0.02); }
+            .role-card:hover { border-color: rgba(255,255,255,0.2); }
+            .incentive-card { border-color: rgba(255,255,255,0.1); background: rgba(255,255,255,0.02); }
+            .tier-row-sm input { border-color: rgba(255,255,255,0.12); }
+            .template-btn { border-color: rgba(255,255,255,0.12); }
+            .template-btn:hover { border-color: var(--accent); background: rgba(96,165,250,0.06); }
+            .model-tabs { border-bottom-color: rgba(255,255,255,0.08); }
+            .comp-table th { border-bottom-color: rgba(255,255,255,0.12); background: var(--card-bg); }
+            .comp-table td { border-bottom-color: rgba(255,255,255,0.05); }
+            .scenario-group { border-left-color: rgba(255,255,255,0.08); }
+            .action-btn.secondary { border-color: rgba(255,255,255,0.15); }
+            .scenario-bar input { border-color: rgba(255,255,255,0.12); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <my-header></my-header>
+    <a href="../" class="back-link">&larr; All Tools</a>
+
+    <section class="page-intro">
+        <div class="subtitle">Sales Operations</div>
+        <h1>Complex Sales Compensation Modeler</h1>
+        <p>Model multi-tiered sales org compensation — from BDRs to executives. Add commission tiers, SPIFs, President's Club, equity, and benefits. Compare scenarios side by side. Everything runs in your browser.</p>
+    </section>
+
+    <div class="calc-form">
+
+        <!-- Main tabs -->
+        <div class="model-tabs">
+            <button class="model-tab active" onclick="switchTab('roles')">Team Roles</button>
+            <button class="model-tab" onclick="switchTab('incentives')">Incentives &amp; Awards</button>
+            <button class="model-tab" onclick="switchTab('benefits')">Benefits &amp; Equity</button>
+            <button class="model-tab" onclick="switchTab('results')">Results</button>
+        </div>
+
+        <!-- ═══ TAB 1: ROLES ═══ -->
+        <div class="tab-panel active" id="tab-roles">
+            <div class="form-section-title" style="margin-top:0;border:none;padding:0;">Add from Template</div>
+            <p style="font-size:0.82rem;color:var(--text-secondary);margin-top:0.15rem;margin-bottom:0.75rem;">Click a template to add a pre-configured role, then customize it. Or add a blank custom role.</p>
+
+            <div class="template-grid">
+                <div class="template-btn" onclick="addRoleFromTemplate('bdr')">
+                    <div class="tmpl-title">BDR</div>
+                    <div class="tmpl-sub">$50K base · $75K OTE</div>
+                </div>
+                <div class="template-btn" onclick="addRoleFromTemplate('sdr')">
+                    <div class="tmpl-title">SDR</div>
+                    <div class="tmpl-sub">$55K base · $85K OTE</div>
+                </div>
+                <div class="template-btn" onclick="addRoleFromTemplate('ae')">
+                    <div class="tmpl-title">Account Exec</div>
+                    <div class="tmpl-sub">$75K base · $150K OTE</div>
+                </div>
+                <div class="template-btn" onclick="addRoleFromTemplate('sae')">
+                    <div class="tmpl-title">Senior AE</div>
+                    <div class="tmpl-sub">$95K base · $210K OTE</div>
+                </div>
+                <div class="template-btn" onclick="addRoleFromTemplate('vp')">
+                    <div class="tmpl-title">VP of Sales</div>
+                    <div class="tmpl-sub">$160K base · $300K OTE</div>
+                </div>
+                <div class="template-btn" onclick="addRoleFromTemplate('exec')">
+                    <div class="tmpl-title">CRO / Exec</div>
+                    <div class="tmpl-sub">$220K base · $440K OTE</div>
+                </div>
+                <div class="template-btn" onclick="addRoleFromTemplate('custom')">
+                    <div class="tmpl-title">+ Custom Role</div>
+                    <div class="tmpl-sub">Blank slate</div>
+                </div>
+            </div>
+
+            <div id="rolesList"></div>
+        </div>
+
+        <!-- ═══ TAB 2: INCENTIVES ═══ -->
+        <div class="tab-panel" id="tab-incentives">
+            <div class="form-section-title" style="margin-top:0;border:none;padding:0;">SPIFs, Awards &amp; President's Club</div>
+            <p style="font-size:0.82rem;color:var(--text-secondary);margin-top:0.15rem;margin-bottom:0.75rem;">Add special incentives that apply to specific roles. These costs are layered on top of base + commission.</p>
+
+            <div style="display:flex;gap:0.5rem;margin-bottom:1rem;flex-wrap:wrap;">
+                <button class="action-btn secondary" onclick="addIncentive('spif')">+ Add SPIF / Bonus</button>
+                <button class="action-btn secondary" onclick="addIncentive('club')">+ President's Club</button>
+                <button class="action-btn secondary" onclick="addIncentive('award')">+ Award / Gift</button>
+            </div>
+
+            <div id="incentivesList"></div>
+
+            <div id="noIncentives" style="text-align:center;padding:2rem;color:var(--text-secondary);font-size:0.9rem;">
+                No incentives added yet. Use the buttons above to add SPIFs, President's Club trips, or awards.
+            </div>
+        </div>
+
+        <!-- ═══ TAB 3: BENEFITS & EQUITY ═══ -->
+        <div class="tab-panel" id="tab-benefits">
+            <div class="form-section-title" style="margin-top:0;border:none;padding:0;">Employer Cost Loading</div>
+            <p style="font-size:0.82rem;color:var(--text-secondary);margin-top:0.15rem;margin-bottom:0.75rem;">These percentages are applied to each employee's total cash comp to model fully-loaded cost.</p>
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Benefits Cost (% of base)</label>
+                    <span class="hint">Health, dental, vision, 401k match, etc.</span>
+                    <input type="number" id="benefitsPct" value="25" min="0" max="100" step="0.5">
+                </div>
+                <div class="form-group">
+                    <label>Payroll Tax (% of total cash)</label>
+                    <span class="hint">FICA, FUTA, state unemployment, etc.</span>
+                    <input type="number" id="payrollTaxPct" value="8.5" min="0" max="30" step="0.1">
+                </div>
+            </div>
+
+            <div class="form-section-title">Equity Grants</div>
+            <p style="font-size:0.82rem;color:var(--text-secondary);margin-top:-0.25rem;margin-bottom:0.75rem;">Annual equity value per role (optional). Set per role below or use a flat amount for all.</p>
+
+            <div class="form-grid" style="margin-bottom:0.75rem;">
+                <div class="form-group">
+                    <label>Default Annual Equity ($)</label>
+                    <span class="hint">Applied to roles that don't have a specific equity value set</span>
+                    <input type="number" id="defaultEquity" value="0" min="0" step="1000">
+                </div>
+            </div>
+
+            <div id="equityByRole"></div>
+        </div>
+
+        <!-- ═══ TAB 4: RESULTS ═══ -->
+        <div class="tab-panel" id="tab-results">
+            <div class="scenario-bar">
+                <label>Scenarios (% attainment):</label>
+                <input type="number" id="scenario1" value="80" min="0" max="300" step="5">
+                <span style="color:var(--text-secondary);">%</span>
+                <input type="number" id="scenario2" value="100" min="0" max="300" step="5">
+                <span style="color:var(--text-secondary);">%</span>
+                <input type="number" id="scenario3" value="120" min="0" max="300" step="5">
+                <span style="color:var(--text-secondary);">%</span>
+                <button class="action-btn primary" onclick="calculateResults()" style="margin-left:0.5rem;">Calculate</button>
+            </div>
+
+            <div id="resultsContent" style="display:none;">
+                <!-- Stats -->
+                <div class="stat-row" id="summaryStats"></div>
+
+                <!-- Individual Breakdown -->
+                <div class="chart-card">
+                    <h3>Individual Compensation Breakdown</h3>
+                    <div style="overflow-x:auto;">
+                        <table class="comp-table" id="individualTable"></table>
+                    </div>
+                </div>
+
+                <!-- Team Cost Chart -->
+                <div class="chart-card">
+                    <h3>Team Cost by Scenario</h3>
+                    <div class="chart-wrap"><canvas id="teamCostChart"></canvas></div>
+                </div>
+
+                <!-- Comp Mix Chart -->
+                <div class="chart-card">
+                    <h3>Compensation Mix (at 100% attainment)</h3>
+                    <div class="chart-wrap"><canvas id="compMixChart"></canvas></div>
+                </div>
+
+                <!-- ROI Metrics -->
+                <div class="chart-card">
+                    <h3>Revenue Efficiency &amp; ROI</h3>
+                    <div style="overflow-x:auto;">
+                        <table class="comp-table" id="roiTable"></table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="noResults" style="text-align:center;padding:2rem;color:var(--text-secondary);font-size:0.9rem;">
+                Add at least one role and click <strong>Calculate</strong> to see results.
+            </div>
+        </div>
+
+        <!-- ═══ Import / Export ═══ -->
+        <div class="form-section-title">Import &amp; Export</div>
+        <p style="font-size:0.82rem;color:var(--text-secondary);margin-top:-0.25rem;margin-bottom:0.75rem;">Save your configuration to reload later, or import a previously saved setup.</p>
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.75rem;">
+            <button class="action-btn secondary" onclick="exportJSON()">
+                <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Export JSON
+            </button>
+            <button class="action-btn secondary" onclick="exportXML()">
+                <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Export XML
+            </button>
+            <button class="action-btn secondary" onclick="$('importFileInput').click()">
+                <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                Import JSON / XML
+            </button>
+        </div>
+        <input type="file" id="importFileInput" accept=".json,.xml" onchange="handleImport(event)" style="display:none;">
+        <div class="feedback" id="feedbackIO"></div>
+
+        <!-- Global calculate button -->
+        <button class="calc-btn" onclick="switchTab('results'); calculateResults();" style="margin-top:1.25rem;">Model Compensation &rarr;</button>
+
+    </div>
+
+    <my-footer></my-footer>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+function fmt(n) {
+    if (n === undefined || n === null || !isFinite(n)) return '$0';
+    return '$' + Math.round(n).toLocaleString();
+}
+function pct(n) {
+    if (!isFinite(n)) return '0.0%';
+    return n.toFixed(1) + '%';
+}
+
+/* ══════════════════════════════════════
+   ROLE TEMPLATES
+   ══════════════════════════════════════ */
+const TEMPLATES = {
+    bdr: {
+        title: 'BDR', badge: 'bdr', base: 50000, ote: 75000, quota: 300000, headcount: 2, revenueType: 'ic',
+        tiers: [{ upTo: 100, rate: 8.33 }, { upTo: 150, rate: 12.5 }, { upTo: 999, rate: 16.67 }]
+    },
+    sdr: {
+        title: 'SDR', badge: 'sdr', base: 55000, ote: 85000, quota: 400000, headcount: 2, revenueType: 'ic',
+        tiers: [{ upTo: 100, rate: 7.5 }, { upTo: 150, rate: 11.25 }, { upTo: 999, rate: 15 }]
+    },
+    ae: {
+        title: 'Account Executive', badge: 'ae', base: 75000, ote: 150000, quota: 750000, headcount: 3, revenueType: 'ic',
+        tiers: [{ upTo: 100, rate: 10 }, { upTo: 130, rate: 15 }, { upTo: 999, rate: 20 }]
+    },
+    sae: {
+        title: 'Senior Account Executive', badge: 'sae', base: 95000, ote: 210000, quota: 1200000, headcount: 2, revenueType: 'ic',
+        tiers: [{ upTo: 100, rate: 9.58 }, { upTo: 130, rate: 14.38 }, { upTo: 999, rate: 19.17 }]
+    },
+    vp: {
+        title: 'VP of Sales', badge: 'vp', base: 160000, ote: 300000, quota: 5000000, headcount: 1, revenueType: 'overlay',
+        tiers: [{ upTo: 100, rate: 2.8 }, { upTo: 130, rate: 4.2 }, { upTo: 999, rate: 5.6 }]
+    },
+    exec: {
+        title: 'CRO / Executive', badge: 'exec', base: 220000, ote: 440000, quota: 15000000, headcount: 1, revenueType: 'overlay',
+        tiers: [{ upTo: 100, rate: 1.47 }, { upTo: 130, rate: 2.2 }, { upTo: 999, rate: 2.93 }]
+    },
+    custom: {
+        title: 'Custom Role', badge: 'custom', base: 60000, ote: 100000, quota: 500000, headcount: 1, revenueType: 'ic',
+        tiers: [{ upTo: 100, rate: 8 }, { upTo: 999, rate: 12 }]
+    }
+};
+
+/* ══════════════════════════════════════
+   STATE
+   ══════════════════════════════════════ */
+let roles = [];
+let incentives = [];
+let nextRoleId = 1;
+let nextIncentiveId = 1;
+let teamCostChart = null;
+let compMixChart = null;
+
+/* ══════════════════════════════════════
+   TAB SWITCHING
+   ══════════════════════════════════════ */
+function switchTab(name) {
+    document.querySelectorAll('.model-tab').forEach((t, i) => {
+        const tabName = ['roles', 'incentives', 'benefits', 'results'][i];
+        t.classList.toggle('active', tabName === name);
+    });
+    document.querySelectorAll('.tab-panel').forEach(p => {
+        p.classList.toggle('active', p.id === 'tab-' + name);
+    });
+    if (name === 'benefits') renderEquityByRole();
+}
+
+/* ══════════════════════════════════════
+   ROLES
+   ══════════════════════════════════════ */
+function addRoleFromTemplate(key) {
+    const t = TEMPLATES[key];
+    if (!t) return;
+    roles.push({
+        id: nextRoleId++,
+        title: t.title,
+        badge: t.badge,
+        base: t.base,
+        ote: t.ote,
+        quota: t.quota,
+        headcount: t.headcount,
+        revenueType: t.revenueType || 'ic',
+        tiers: t.tiers.map(tr => ({ ...tr })),
+        equity: null
+    });
+    renderRoles();
+}
+
+function removeRole(id) {
+    roles = roles.filter(r => r.id !== id);
+    // Clean up incentives pointing at this role
+    incentives.forEach(inc => {
+        if (inc.appliesTo === String(id)) inc.appliesTo = 'all';
+    });
+    renderRoles();
+}
+
+function addTier(roleId) {
+    const role = roles.find(r => r.id === roleId);
+    if (!role) return;
+    role.tiers.push({ upTo: 999, rate: 10 });
+    renderRoles();
+}
+
+function removeTier(roleId, tierIdx) {
+    const role = roles.find(r => r.id === roleId);
+    if (!role || role.tiers.length <= 1) return;
+    role.tiers.splice(tierIdx, 1);
+    renderRoles();
+}
+
+function renderRoles() {
+    if (roles.length === 0) {
+        $('rolesList').innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text-secondary);font-size:0.9rem;">No roles added. Click a template above to get started.</div>';
+        return;
+    }
+
+    let html = '';
+    roles.forEach(role => {
+        const badgeKey = esc(role.badge || 'custom');
+        const tiersHtml = role.tiers.map((tier, ti) => `
+            <div class="tier-row-sm">
+                <div>
+                    <div class="tier-label">Up to %</div>
+                    <input type="number" value="${tier.upTo}" min="0" max="999" step="5"
+                           onchange="updateTier(${role.id},${ti},'upTo',this.value)"
+                           ${ti === role.tiers.length - 1 ? 'placeholder="∞" title="Use 999 for uncapped"' : ''}>
+                </div>
+                <div>
+                    <div class="tier-label">Commission %</div>
+                    <input type="number" value="${tier.rate}" min="0" max="100" step="0.1"
+                           onchange="updateTier(${role.id},${ti},'rate',this.value)">
+                </div>
+                <div>
+                    <div class="tier-label">&nbsp;</div>
+                    <button onclick="removeTier(${role.id},${ti})" title="Remove tier" ${role.tiers.length <= 1 ? 'disabled style="opacity:0.3"' : ''}>&times;</button>
+                </div>
+            </div>`).join('');
+
+        html += `
+            <div class="role-card">
+                <div class="role-card-header">
+                    <div style="display:flex;align-items:center;gap:0.5rem;">
+                        <span class="role-card-badge badge-${badgeKey}">${esc((role.badge || 'custom').toUpperCase())}</span>
+                        <input type="text" value="${escAttr(role.title)}" style="font-weight:700;font-size:1rem;border:none;background:none;color:var(--text-primary);font-family:'Inter',system-ui,sans-serif;width:auto;padding:0;min-height:auto;"
+                               onchange="updateRole(${role.id},'title',this.value)">
+                    </div>
+                    <button class="remove-btn" onclick="removeRole(${role.id})" title="Remove role">&times;</button>
+                </div>
+
+                <div class="role-grid">
+                    <div class="form-group">
+                        <label>Headcount</label>
+                        <input type="number" value="${role.headcount}" min="1" max="500"
+                               onchange="updateRole(${role.id},'headcount',this.value)">
+                    </div>
+                    <div class="form-group">
+                        <label>Base Salary ($)</label>
+                        <input type="number" value="${role.base}" min="0" step="1000"
+                               onchange="updateRole(${role.id},'base',this.value)">
+                    </div>
+                    <div class="form-group">
+                        <label>OTE ($)</label>
+                        <input type="number" value="${role.ote}" min="0" step="1000"
+                               onchange="updateRole(${role.id},'ote',this.value)">
+                    </div>
+                    <div class="form-group">
+                        <label>Quota ($)</label>
+                        <input type="number" value="${role.quota}" min="0" step="5000"
+                               onchange="updateRole(${role.id},'quota',this.value)">
+                    </div>
+                    <div class="form-group">
+                        <label>Revenue Type</label>
+                        <select onchange="updateRole(${role.id},'revenueType',this.value)">
+                            <option value="ic" ${role.revenueType === 'ic' ? 'selected' : ''}>Individual Contributor</option>
+                            <option value="overlay" ${role.revenueType === 'overlay' ? 'selected' : ''}>Management Overlay</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="tier-section">
+                    <div class="tier-section-title">Commission Tiers (% of quota attainment → commission rate on revenue)</div>
+                    ${tiersHtml}
+                    <button class="add-btn" onclick="addTier(${role.id})" style="margin-top:0.3rem;padding:0.4rem 0.75rem;font-size:0.78rem;">+ Add Tier</button>
+                </div>
+            </div>`;
+    });
+    $('rolesList').innerHTML = html;
+}
+
+function updateRole(id, field, value) {
+    const role = roles.find(r => r.id === id);
+    if (!role) return;
+    if (field === 'title' || field === 'revenueType') role[field] = value;
+    else role[field] = parseFloat(value) || 0;
+}
+
+function updateTier(roleId, tierIdx, field, value) {
+    const role = roles.find(r => r.id === roleId);
+    if (!role || !role.tiers[tierIdx]) return;
+    role.tiers[tierIdx][field] = parseFloat(value) || 0;
+}
+
+/* ══════════════════════════════════════
+   INCENTIVES
+   ══════════════════════════════════════ */
+function addIncentive(type) {
+    const defaults = {
+        spif: { name: 'Quarterly SPIF', amount: 2000, pctEligible: 30, threshold: 100 },
+        club: { name: "President's Club Trip", amount: 8000, pctEligible: 15, threshold: 110 },
+        award: { name: 'Top Performer Award', amount: 500, pctEligible: 20, threshold: 100 }
+    };
+    const d = defaults[type];
+    if (!d) return;
+    incentives.push({
+        id: nextIncentiveId++,
+        type,
+        name: d.name,
+        amount: d.amount,
+        pctEligible: d.pctEligible,
+        threshold: d.threshold,
+        appliesTo: 'all'
+    });
+    renderIncentives();
+}
+
+function removeIncentive(id) {
+    incentives = incentives.filter(inc => inc.id !== id);
+    renderIncentives();
+}
+
+function renderIncentives() {
+    $('noIncentives').style.display = incentives.length === 0 ? 'block' : 'none';
+
+    if (incentives.length === 0) {
+        $('incentivesList').innerHTML = '';
+        return;
+    }
+
+    const typeLabels = { spif: 'SPIF / Bonus', club: "President's Club", award: 'Award / Gift' };
+    const badgeClass = { spif: 'badge-spif', club: 'badge-club', award: 'badge-award' };
+
+    let html = '';
+    incentives.forEach(inc => {
+        // Build role options fresh each time, properly marking the selected one
+        let roleOptsHtml = `<option value="all" ${inc.appliesTo === 'all' ? 'selected' : ''}>All Roles</option>`;
+        roles.forEach(r => {
+            const sel = (String(inc.appliesTo) === String(r.id)) ? 'selected' : '';
+            roleOptsHtml += `<option value="${r.id}" ${sel}>${esc(r.title)}</option>`;
+        });
+
+        html += `
+            <div class="incentive-card">
+                <div class="incentive-header">
+                    <div style="display:flex;align-items:center;gap:0.5rem;">
+                        <span class="incentive-type-badge ${badgeClass[inc.type] || 'badge-spif'}">${typeLabels[inc.type] || inc.type}</span>
+                        <input type="text" value="${escAttr(inc.name)}" style="font-weight:700;font-size:0.92rem;border:none;background:none;color:var(--text-primary);font-family:'Inter',system-ui,sans-serif;min-width:120px;padding:0;min-height:auto;"
+                               onchange="updateIncentive(${inc.id},'name',this.value)">
+                    </div>
+                    <button class="remove-btn" onclick="removeIncentive(${inc.id})" title="Remove">&times;</button>
+                </div>
+                <div class="incentive-grid">
+                    <div class="form-group">
+                        <label>Cost per Person ($)</label>
+                        <input type="number" value="${inc.amount}" min="0" step="100"
+                               onchange="updateIncentive(${inc.id},'amount',this.value)">
+                    </div>
+                    <div class="form-group">
+                        <label>% of Team Eligible</label>
+                        <span class="hint">What % of headcount qualifies</span>
+                        <input type="number" value="${inc.pctEligible}" min="0" max="100" step="5"
+                               onchange="updateIncentive(${inc.id},'pctEligible',this.value)">
+                    </div>
+                    <div class="form-group">
+                        <label>Min Attainment (%)</label>
+                        <span class="hint">Must hit this % of quota to qualify</span>
+                        <input type="number" value="${inc.threshold}" min="0" max="300" step="5"
+                               onchange="updateIncentive(${inc.id},'threshold',this.value)">
+                    </div>
+                    <div class="form-group">
+                        <label>Applies to</label>
+                        <select onchange="updateIncentive(${inc.id},'appliesTo',this.value)">
+                            ${roleOptsHtml}
+                        </select>
+                    </div>
+                </div>
+            </div>`;
+    });
+    $('incentivesList').innerHTML = html;
+}
+
+function updateIncentive(id, field, value) {
+    const inc = incentives.find(i => i.id === id);
+    if (!inc) return;
+    if (field === 'name' || field === 'appliesTo') inc[field] = value;
+    else inc[field] = parseFloat(value) || 0;
+}
+
+/* ══════════════════════════════════════
+   BENEFITS & EQUITY TAB
+   ══════════════════════════════════════ */
+function renderEquityByRole() {
+    if (roles.length === 0) {
+        $('equityByRole').innerHTML = '<p style="font-size:0.85rem;color:var(--text-secondary);">Add roles first to set per-role equity values.</p>';
+        return;
+    }
+    const defaultEq = parseFloat($('defaultEquity').value) || 0;
+    let html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:0.5rem;">';
+    roles.forEach(r => {
+        const val = r.equity !== null ? r.equity : '';
+        html += `
+            <div class="form-group">
+                <label>${esc(r.title)} Equity ($)</label>
+                <span class="hint">Leave blank to use default (${fmt(defaultEq)})</span>
+                <input type="number" value="${val}" min="0" step="1000" placeholder="${defaultEq}"
+                       onchange="setRoleEquity(${r.id}, this.value)">
+            </div>`;
+    });
+    html += '</div>';
+    $('equityByRole').innerHTML = html;
+}
+
+function setRoleEquity(id, value) {
+    const role = roles.find(r => r.id === id);
+    if (role) role.equity = value ? parseFloat(value) : null;
+}
+
+/* ══════════════════════════════════════
+   CALCULATION ENGINE
+   ══════════════════════════════════════ */
+function calculateResults() {
+    try {
+        if (roles.length === 0) {
+            $('noResults').style.display = 'block';
+            $('resultsContent').style.display = 'none';
+            return;
+        }
+
+        const scenarios = [
+            parseFloat($('scenario1').value) || 80,
+            parseFloat($('scenario2').value) || 100,
+            parseFloat($('scenario3').value) || 120
+        ];
+
+        const benefitsPct = (parseFloat($('benefitsPct').value) || 0) / 100;
+        const payrollTaxPct = (parseFloat($('payrollTaxPct').value) || 0) / 100;
+        const defaultEquity = parseFloat($('defaultEquity').value) || 0;
+
+        const results = roles.map(role => {
+            const equity = (role.equity !== null && role.equity !== undefined) ? role.equity : defaultEquity;
+            const scenarioResults = scenarios.map(attainPct => {
+                const revenue = (role.quota || 0) * (attainPct / 100);
+                const commission = calcTieredCommission(role, attainPct);
+
+                let incentiveTotal = 0;
+                incentives.forEach(inc => {
+                    if (inc.appliesTo !== 'all' && String(inc.appliesTo) !== String(role.id)) return;
+                    if (attainPct >= inc.threshold) {
+                        incentiveTotal += (inc.amount || 0) * ((inc.pctEligible || 0) / 100);
+                    }
+                });
+
+                const base = role.base || 0;
+                const hc = role.headcount || 1;
+                const totalCash = base + commission + incentiveTotal;
+                const benefits = base * benefitsPct;
+                const payrollTax = totalCash * payrollTaxPct;
+                const fullyLoaded = totalCash + benefits + payrollTax + equity;
+
+                return {
+                    attainPct, revenue, base, commission,
+                    incentives: incentiveTotal, totalCash,
+                    benefits, payrollTax, equity, fullyLoaded,
+                    fullyLoadedTeam: fullyLoaded * hc,
+                    revenueTeam: revenue * hc
+                };
+            });
+            return { role, scenarioResults };
+        });
+
+        renderResults(results, scenarios);
+        $('noResults').style.display = 'none';
+        $('resultsContent').style.display = 'block';
+    } catch (err) {
+        console.error('Calculation error:', err);
+        $('noResults').innerHTML = '<span style="color:#dc2626;">An error occurred during calculation. Please check your inputs and try again.</span>';
+        $('noResults').style.display = 'block';
+        $('resultsContent').style.display = 'none';
+    }
+}
+
+function calcTieredCommission(role, attainPct) {
+    if (!role.tiers || role.tiers.length === 0 || !role.quota) return 0;
+    const revenue = role.quota * (attainPct / 100);
+    let commission = 0;
+    let prevCutoff = 0;
+
+    const sortedTiers = [...role.tiers].sort((a, b) => (a.upTo || 0) - (b.upTo || 0));
+
+    for (const tier of sortedTiers) {
+        const tierUpTo = tier.upTo || 0;
+        const tierRate = tier.rate || 0;
+        const cutoff = Math.min(tierUpTo, attainPct) / 100 * role.quota;
+        const base = prevCutoff / 100 * role.quota;
+        if (attainPct > prevCutoff) {
+            const applicable = Math.min(cutoff, revenue) - Math.min(base, revenue);
+            if (applicable > 0) {
+                commission += applicable * (tierRate / 100);
+            }
+        }
+        prevCutoff = tierUpTo;
+        if (prevCutoff >= attainPct) break;
+    }
+
+    return commission;
+}
+
+/* ══════════════════════════════════════
+   RENDER RESULTS
+   ══════════════════════════════════════ */
+function renderResults(results, scenarios) {
+    renderSummaryStats(results, scenarios);
+    renderIndividualTable(results, scenarios);
+    renderTeamCostChart(results, scenarios);
+    renderCompMixChart(results, scenarios);
+    renderROITable(results, scenarios);
+}
+
+function renderSummaryStats(results, scenarios) {
+    const s100Idx = scenarios.indexOf(100) >= 0 ? scenarios.indexOf(100) : 1;
+    const si = Math.min(s100Idx, scenarios.length - 1);
+    let totalHeadcount = 0, totalCost = 0, totalRevenue = 0, overlayCount = 0;
+    results.forEach(r => {
+        totalHeadcount += (r.role.headcount || 1);
+        totalCost += r.scenarioResults[si].fullyLoadedTeam;
+        if (r.role.revenueType === 'overlay') {
+            overlayCount += (r.role.headcount || 1);
+        } else {
+            totalRevenue += r.scenarioResults[si].revenueTeam;
+        }
+    });
+    const costPerDollar = totalRevenue > 0 ? (totalCost / totalRevenue * 100) : 0;
+    const avgComp = totalHeadcount > 0 ? totalCost / totalHeadcount : 0;
+
+    $('summaryStats').innerHTML = `
+        <div class="stat-card"><div class="val">${totalHeadcount}</div><div class="lbl">Total Headcount</div></div>
+        <div class="stat-card"><div class="val">${fmt(totalCost)}</div><div class="lbl">Total Comp Cost</div></div>
+        <div class="stat-card"><div class="val">${fmt(totalRevenue)}</div><div class="lbl">IC Revenue (no overlays)</div></div>
+        <div class="stat-card"><div class="val">${pct(costPerDollar)}</div><div class="lbl">Cost / Revenue</div></div>
+        <div class="stat-card"><div class="val">${fmt(avgComp)}</div><div class="lbl">Avg Fully-Loaded</div></div>
+        <div class="stat-card"><div class="val">${overlayCount > 0 ? (totalHeadcount - overlayCount) + ' IC / ' + overlayCount + ' Overlay' : roles.length}</div><div class="lbl">${overlayCount > 0 ? 'IC / Overlay Split' : 'Role Types'}</div></div>`;
+}
+
+function renderIndividualTable(results, scenarios) {
+    let html = '<thead><tr><th>Role</th><th>HC</th>';
+    scenarios.forEach(s => { html += `<th class="scenario-header" colspan="5">${s}% Attainment</th>`; });
+    html += '</tr><tr><th></th><th></th>';
+    scenarios.forEach(() => { html += '<th class="scenario-group">Base</th><th>Commission</th><th>Incentives</th><th>Equity+Benefits</th><th>Fully Loaded</th>'; });
+    html += '</tr></thead><tbody>';
+
+    let totals = scenarios.map(() => ({ base: 0, commission: 0, incentives: 0, overhead: 0, loaded: 0 }));
+
+    results.forEach(r => {
+        const overlayTag = r.role.revenueType === 'overlay' ? ' <span style="font-size:0.65rem;color:#8b5cf6;font-weight:700;vertical-align:middle;">OVERLAY</span>' : '';
+        const hc = r.role.headcount || 1;
+        html += `<tr><td>${esc(r.role.title)}${overlayTag}</td><td style="text-align:center;">${hc}</td>`;
+        r.scenarioResults.forEach((sr, si) => {
+            const overhead = sr.benefits + sr.payrollTax + sr.equity;
+            html += `<td class="scenario-group">${fmt(sr.base)}</td><td>${fmt(sr.commission)}</td><td>${fmt(sr.incentives)}</td><td>${fmt(overhead)}</td><td style="font-weight:700;">${fmt(sr.fullyLoaded)}</td>`;
+            totals[si].base += sr.base * hc;
+            totals[si].commission += sr.commission * hc;
+            totals[si].incentives += sr.incentives * hc;
+            totals[si].overhead += overhead * hc;
+            totals[si].loaded += sr.fullyLoadedTeam;
+        });
+        html += '</tr>';
+    });
+
+    const totalHC = results.reduce((s, r) => s + (r.role.headcount || 1), 0);
+    html += `<tr class="total-row"><td>Total (Team)</td><td style="text-align:center;">${totalHC}</td>`;
+    totals.forEach(t => { html += `<td class="scenario-group">${fmt(t.base)}</td><td>${fmt(t.commission)}</td><td>${fmt(t.incentives)}</td><td>${fmt(t.overhead)}</td><td>${fmt(t.loaded)}</td>`; });
+    html += '</tr></tbody>';
+    $('individualTable').innerHTML = html;
+}
+
+function renderTeamCostChart(results, scenarios) {
+    const labels = results.map(r => r.role.title + ' (' + (r.role.headcount || 1) + ')');
+    const colors = ['rgba(37,99,235,0.7)', 'rgba(22,163,74,0.7)', 'rgba(245,158,11,0.7)'];
+    const datasets = scenarios.map((s, si) => ({
+        label: s + '% Attainment',
+        data: results.map(r => Math.round(r.scenarioResults[si].fullyLoadedTeam)),
+        backgroundColor: colors[si % colors.length],
+        borderRadius: 4
+    }));
+
+    if (teamCostChart) { try { teamCostChart.destroy(); } catch(e) {} }
+    teamCostChart = new Chart($('teamCostChart'), {
+        type: 'bar', data: { labels, datasets },
+        options: {
+            responsive: true,
+            plugins: { legend: { position: 'top' }, tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + fmt(ctx.raw) } } },
+            scales: { y: { ticks: { callback: v => fmt(v) }, beginAtZero: true } }
+        }
+    });
+}
+
+function renderCompMixChart(results, scenarios) {
+    const s100Idx = scenarios.indexOf(100) >= 0 ? scenarios.indexOf(100) : 1;
+    const si = Math.min(s100Idx, scenarios.length - 1);
+    const labels = results.map(r => r.role.title);
+
+    if (compMixChart) { try { compMixChart.destroy(); } catch(e) {} }
+    compMixChart = new Chart($('compMixChart'), {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [
+                { label: 'Base Salary', data: results.map(r => Math.round(r.scenarioResults[si].base)), backgroundColor: 'rgba(37,99,235,0.75)', borderRadius: 2 },
+                { label: 'Commission', data: results.map(r => Math.round(r.scenarioResults[si].commission)), backgroundColor: 'rgba(22,163,74,0.75)', borderRadius: 2 },
+                { label: 'Incentives', data: results.map(r => Math.round(r.scenarioResults[si].incentives)), backgroundColor: 'rgba(245,158,11,0.75)', borderRadius: 2 },
+                { label: 'Benefits/Equity/Tax', data: results.map(r => { const sr = r.scenarioResults[si]; return Math.round(sr.benefits + sr.payrollTax + sr.equity); }), backgroundColor: 'rgba(139,92,246,0.6)', borderRadius: 2 }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { position: 'top' }, tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + fmt(ctx.raw) } } },
+            scales: { x: { stacked: true }, y: { stacked: true, ticks: { callback: v => fmt(v) }, beginAtZero: true } }
+        }
+    });
+}
+
+function renderROITable(results, scenarios) {
+    let html = '<thead><tr><th>Metric</th>';
+    scenarios.forEach(s => { html += `<th>${s}% Attainment</th>`; });
+    html += '</tr></thead><tbody>';
+
+    const totals = scenarios.map((s, si) => {
+        let revenue = 0, cost = 0, headcount = 0, icHeadcount = 0, overlayCost = 0;
+        results.forEach(r => {
+            const hc = r.role.headcount || 1;
+            cost += r.scenarioResults[si].fullyLoadedTeam;
+            headcount += hc;
+            if (r.role.revenueType === 'ic') {
+                revenue += r.scenarioResults[si].revenueTeam;
+                icHeadcount += hc;
+            } else {
+                overlayCost += r.scenarioResults[si].fullyLoadedTeam;
+            }
+        });
+        return { revenue, cost, headcount, icHeadcount, overlayCost };
+    });
+
+    const rows = [
+        { label: 'IC Revenue (excl. overlay quotas)', fn: t => fmt(t.revenue) },
+        { label: 'Total Comp Cost (all roles)', fn: t => fmt(t.cost) },
+        { label: 'Management Overlay Cost', fn: t => fmt(t.overlayCost) },
+        { label: 'Gross Margin (Revenue - Comp)', fn: t => fmt(t.revenue - t.cost) },
+        { label: 'Cost of Sale (% of Revenue)', fn: t => t.revenue > 0 ? pct(t.cost / t.revenue * 100) : '\u2014' },
+        { label: 'Revenue per Sales Dollar', fn: t => t.cost > 0 ? '$' + (t.revenue / t.cost).toFixed(2) : '\u2014' },
+        { label: 'Revenue per IC Head', fn: t => t.icHeadcount > 0 ? fmt(t.revenue / t.icHeadcount) : '\u2014' },
+        { label: 'Cost per Head (all)', fn: t => t.headcount > 0 ? fmt(t.cost / t.headcount) : '\u2014' },
+    ];
+
+    rows.forEach(row => {
+        html += `<tr><td>${row.label}</td>`;
+        totals.forEach(t => { html += `<td>${row.fn(t)}</td>`; });
+        html += '</tr>';
+    });
+    html += '</tbody>';
+    $('roiTable').innerHTML = html;
+}
+
+/* ══════════════════════════════════════
+   IMPORT / EXPORT
+   ══════════════════════════════════════ */
+function buildExportData() {
+    return {
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        settings: {
+            benefitsPct: parseFloat($('benefitsPct').value) || 0,
+            payrollTaxPct: parseFloat($('payrollTaxPct').value) || 0,
+            defaultEquity: parseFloat($('defaultEquity').value) || 0,
+            scenarios: [
+                parseFloat($('scenario1').value) || 80,
+                parseFloat($('scenario2').value) || 100,
+                parseFloat($('scenario3').value) || 120
+            ]
+        },
+        roles: roles.map(r => ({
+            title: r.title,
+            badge: r.badge,
+            base: r.base,
+            ote: r.ote,
+            quota: r.quota,
+            headcount: r.headcount,
+            revenueType: r.revenueType,
+            equity: r.equity,
+            tiers: r.tiers.map(t => ({ upTo: t.upTo, rate: t.rate }))
+        })),
+        incentives: incentives.map(inc => ({
+            type: inc.type,
+            name: inc.name,
+            amount: inc.amount,
+            pctEligible: inc.pctEligible,
+            threshold: inc.threshold,
+            appliesTo: inc.appliesTo
+        }))
+    };
+}
+
+function exportJSON() {
+    const data = buildExportData();
+    const json = JSON.stringify(data, null, 2);
+    downloadString(json, 'sales-comp-model.json', 'application/json');
+    showFeedback('feedbackIO', 'success', 'Exported ' + roles.length + ' roles and ' + incentives.length + ' incentives to JSON.');
+}
+
+function exportXML() {
+    const data = buildExportData();
+    let xml = '<?xml version="1.0" encoding="UTF-8"?>\n<SalesCompModel version="1" exportedAt="' + escXml(data.exportedAt) + '">\n';
+
+    // Settings
+    xml += '  <Settings>\n';
+    xml += '    <BenefitsPct>' + data.settings.benefitsPct + '</BenefitsPct>\n';
+    xml += '    <PayrollTaxPct>' + data.settings.payrollTaxPct + '</PayrollTaxPct>\n';
+    xml += '    <DefaultEquity>' + data.settings.defaultEquity + '</DefaultEquity>\n';
+    xml += '    <Scenarios>\n';
+    data.settings.scenarios.forEach(s => { xml += '      <Scenario>' + s + '</Scenario>\n'; });
+    xml += '    </Scenarios>\n';
+    xml += '  </Settings>\n';
+
+    // Roles
+    xml += '  <Roles>\n';
+    data.roles.forEach(r => {
+        xml += '    <Role>\n';
+        xml += '      <Title>' + escXml(r.title) + '</Title>\n';
+        xml += '      <Badge>' + escXml(r.badge) + '</Badge>\n';
+        xml += '      <Base>' + r.base + '</Base>\n';
+        xml += '      <OTE>' + r.ote + '</OTE>\n';
+        xml += '      <Quota>' + r.quota + '</Quota>\n';
+        xml += '      <Headcount>' + r.headcount + '</Headcount>\n';
+        xml += '      <RevenueType>' + escXml(r.revenueType) + '</RevenueType>\n';
+        xml += '      <Equity>' + (r.equity !== null ? r.equity : '') + '</Equity>\n';
+        xml += '      <Tiers>\n';
+        r.tiers.forEach(t => {
+            xml += '        <Tier upTo="' + t.upTo + '" rate="' + t.rate + '" />\n';
+        });
+        xml += '      </Tiers>\n';
+        xml += '    </Role>\n';
+    });
+    xml += '  </Roles>\n';
+
+    // Incentives
+    xml += '  <Incentives>\n';
+    data.incentives.forEach(inc => {
+        xml += '    <Incentive type="' + escXml(inc.type) + '">\n';
+        xml += '      <Name>' + escXml(inc.name) + '</Name>\n';
+        xml += '      <Amount>' + inc.amount + '</Amount>\n';
+        xml += '      <PctEligible>' + inc.pctEligible + '</PctEligible>\n';
+        xml += '      <Threshold>' + inc.threshold + '</Threshold>\n';
+        xml += '      <AppliesTo>' + escXml(String(inc.appliesTo)) + '</AppliesTo>\n';
+        xml += '    </Incentive>\n';
+    });
+    xml += '  </Incentives>\n';
+    xml += '</SalesCompModel>\n';
+
+    downloadString(xml, 'sales-comp-model.xml', 'application/xml');
+    showFeedback('feedbackIO', 'success', 'Exported ' + roles.length + ' roles and ' + incentives.length + ' incentives to XML.');
+}
+
+function handleImport(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    event.target.value = '';
+
+    const reader = new FileReader();
+    reader.onload = e => {
+        const text = e.target.result;
+        try {
+            if (file.name.toLowerCase().endsWith('.xml')) {
+                importXML(text);
+            } else {
+                importJSON(text);
+            }
+        } catch (err) {
+            showFeedback('feedbackIO', 'error', 'Import failed: ' + err.message);
+        }
+    };
+    reader.readAsText(file);
+}
+
+function importJSON(text) {
+    const data = JSON.parse(text);
+    if (!data.roles || !Array.isArray(data.roles)) throw new Error('Invalid JSON: no roles array found.');
+
+    // Load settings
+    if (data.settings) {
+        if (data.settings.benefitsPct != null) $('benefitsPct').value = data.settings.benefitsPct;
+        if (data.settings.payrollTaxPct != null) $('payrollTaxPct').value = data.settings.payrollTaxPct;
+        if (data.settings.defaultEquity != null) $('defaultEquity').value = data.settings.defaultEquity;
+        if (data.settings.scenarios && data.settings.scenarios.length >= 3) {
+            $('scenario1').value = data.settings.scenarios[0];
+            $('scenario2').value = data.settings.scenarios[1];
+            $('scenario3').value = data.settings.scenarios[2];
+        }
+    }
+
+    // Load roles
+    roles = [];
+    nextRoleId = 1;
+    data.roles.forEach(r => {
+        roles.push({
+            id: nextRoleId++,
+            title: r.title || 'Untitled',
+            badge: r.badge || 'custom',
+            base: parseFloat(r.base) || 0,
+            ote: parseFloat(r.ote) || 0,
+            quota: parseFloat(r.quota) || 0,
+            headcount: parseInt(r.headcount) || 1,
+            revenueType: r.revenueType || 'ic',
+            equity: r.equity !== null && r.equity !== undefined && r.equity !== '' ? parseFloat(r.equity) : null,
+            tiers: (r.tiers || []).map(t => ({ upTo: parseFloat(t.upTo) || 0, rate: parseFloat(t.rate) || 0 }))
+        });
+    });
+
+    // Load incentives
+    incentives = [];
+    nextIncentiveId = 1;
+    if (data.incentives && Array.isArray(data.incentives)) {
+        data.incentives.forEach(inc => {
+            incentives.push({
+                id: nextIncentiveId++,
+                type: inc.type || 'spif',
+                name: inc.name || 'Untitled',
+                amount: parseFloat(inc.amount) || 0,
+                pctEligible: parseFloat(inc.pctEligible) || 0,
+                threshold: parseFloat(inc.threshold) || 0,
+                appliesTo: inc.appliesTo || 'all'
+            });
+        });
+    }
+
+    renderRoles();
+    renderIncentives();
+    showFeedback('feedbackIO', 'success', 'Imported ' + roles.length + ' roles and ' + incentives.length + ' incentives from JSON.');
+}
+
+function importXML(text) {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(text, 'application/xml');
+
+    if (doc.querySelector('parsererror')) throw new Error('Invalid XML format.');
+
+    // Settings
+    const getXmlVal = (parent, tag) => { const el = parent.querySelector(tag); return el ? el.textContent : null; };
+
+    const settings = doc.querySelector('Settings');
+    if (settings) {
+        const bp = getXmlVal(settings, 'BenefitsPct');
+        const pt = getXmlVal(settings, 'PayrollTaxPct');
+        const de = getXmlVal(settings, 'DefaultEquity');
+        if (bp) $('benefitsPct').value = bp;
+        if (pt) $('payrollTaxPct').value = pt;
+        if (de) $('defaultEquity').value = de;
+
+        const scenarioEls = settings.querySelectorAll('Scenarios > Scenario');
+        if (scenarioEls.length >= 3) {
+            $('scenario1').value = scenarioEls[0].textContent;
+            $('scenario2').value = scenarioEls[1].textContent;
+            $('scenario3').value = scenarioEls[2].textContent;
+        }
+    }
+
+    // Roles
+    roles = [];
+    nextRoleId = 1;
+    doc.querySelectorAll('Roles > Role').forEach(roleEl => {
+        const tiers = [];
+        roleEl.querySelectorAll('Tiers > Tier').forEach(tierEl => {
+            tiers.push({ upTo: parseFloat(tierEl.getAttribute('upTo')) || 0, rate: parseFloat(tierEl.getAttribute('rate')) || 0 });
+        });
+        const eqVal = getXmlVal(roleEl, 'Equity');
+        roles.push({
+            id: nextRoleId++,
+            title: getXmlVal(roleEl, 'Title') || 'Untitled',
+            badge: getXmlVal(roleEl, 'Badge') || 'custom',
+            base: parseFloat(getXmlVal(roleEl, 'Base')) || 0,
+            ote: parseFloat(getXmlVal(roleEl, 'OTE')) || 0,
+            quota: parseFloat(getXmlVal(roleEl, 'Quota')) || 0,
+            headcount: parseInt(getXmlVal(roleEl, 'Headcount')) || 1,
+            revenueType: getXmlVal(roleEl, 'RevenueType') || 'ic',
+            equity: eqVal ? parseFloat(eqVal) : null,
+            tiers: tiers.length > 0 ? tiers : [{ upTo: 100, rate: 10 }]
+        });
+    });
+
+    // Incentives
+    incentives = [];
+    nextIncentiveId = 1;
+    doc.querySelectorAll('Incentives > Incentive').forEach(incEl => {
+        incentives.push({
+            id: nextIncentiveId++,
+            type: incEl.getAttribute('type') || 'spif',
+            name: getXmlVal(incEl, 'Name') || 'Untitled',
+            amount: parseFloat(getXmlVal(incEl, 'Amount')) || 0,
+            pctEligible: parseFloat(getXmlVal(incEl, 'PctEligible')) || 0,
+            threshold: parseFloat(getXmlVal(incEl, 'Threshold')) || 0,
+            appliesTo: getXmlVal(incEl, 'AppliesTo') || 'all'
+        });
+    });
+
+    renderRoles();
+    renderIncentives();
+    showFeedback('feedbackIO', 'success', 'Imported ' + roles.length + ' roles and ' + incentives.length + ' incentives from XML.');
+}
+
+/* ══════════════════════════════════════
+   HELPERS
+   ══════════════════════════════════════ */
+function esc(s) {
+    if (!s) return '';
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function escAttr(s) {
+    // Safe for use inside HTML attribute values (value="...")
+    if (!s) return '';
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function escXml(s) {
+    if (!s) return '';
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
+}
+
+function showFeedback(id, type, msg) {
+    const el = $(id);
+    if (!el) return;
+    el.className = 'feedback ' + type;
+    el.textContent = msg;
+}
+
+function downloadString(content, filename, mimeType) {
+    const blob = new Blob([content], { type: mimeType + ';charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+}
+
+// Initial render
+renderRoles();
+renderIncentives();
+</script>
+
+</body>
+</html>
