@@ -1,0 +1,1239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workforce Model Comparison | Thomas Mattson</title>
+    <link rel="stylesheet" href="../../styles.css">
+    <link rel="stylesheet" href="../../calculators/calculators.css">
+    <script src="../../main.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <style>
+        /* ── Tabs ── */
+        .model-tabs {
+            display: flex; gap: 0.4rem; margin-bottom: 1.5rem;
+            flex-wrap: wrap; border-bottom: 2px solid rgba(0,0,0,0.06);
+            padding-bottom: 0;
+        }
+        .model-tab {
+            padding: 0.6rem 1.1rem; font-size: 0.82rem; font-weight: 700;
+            color: var(--text-secondary); background: none; border: none;
+            cursor: pointer; font-family: 'Inter', system-ui, sans-serif;
+            border-bottom: 3px solid transparent; margin-bottom: -2px;
+            transition: all 0.2s; white-space: nowrap;
+        }
+        .model-tab:hover { color: var(--accent); }
+        .model-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+
+        /* ── Role cards ── */
+        .role-card {
+            background: rgba(0,0,0,0.015); border: 1.5px solid rgba(0,0,0,0.08);
+            border-radius: 10px; padding: 1.25rem; margin-bottom: 0.85rem;
+            transition: border-color 0.15s;
+        }
+        .role-card:hover { border-color: rgba(0,0,0,0.15); }
+        .role-card-header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 0.85rem; gap: 0.75rem; flex-wrap: wrap;
+        }
+        .role-card-title { font-weight: 700; font-size: 1rem; }
+        .role-card-badge {
+            font-size: 0.68rem; font-weight: 700; padding: 0.15rem 0.55rem;
+            border-radius: 50px; text-transform: uppercase; letter-spacing: 0.03em;
+        }
+
+        .role-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 0.65rem;
+        }
+        .role-grid .form-group label { font-size: 0.72rem; }
+        .role-grid .form-group input,
+        .role-grid .form-group select {
+            padding: 0.5rem 0.65rem; font-size: 0.88rem; min-height: 38px;
+        }
+
+        /* ── Metro tier info ── */
+        .metro-info {
+            font-size: 0.72rem; color: var(--text-secondary); margin-top: 0.25rem;
+            font-style: italic;
+        }
+
+        /* ── Cost item rows ── */
+        .cost-item {
+            display: grid; grid-template-columns: 2fr 1fr 1fr 1fr auto;
+            gap: 0.5rem; align-items: end; margin-bottom: 0.5rem;
+        }
+        .cost-item input, .cost-item select {
+            padding: 0.45rem 0.6rem; font-size: 0.85rem; min-height: 36px;
+            border: 1.5px solid rgba(0,0,0,0.12); border-radius: 6px;
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg-color); color: var(--text-primary);
+        }
+        .cost-item input:focus, .cost-item select:focus {
+            outline: none; border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
+        }
+
+        /* ── Import / Export bar ── */
+        .io-bar {
+            display: flex; gap: 0.65rem; margin-bottom: 1.25rem;
+            flex-wrap: wrap; align-items: center;
+        }
+        .io-bar button {
+            display: inline-flex; align-items: center; gap: 0.4rem;
+            padding: 0.5rem 1rem; font-size: 0.82rem; font-weight: 600;
+            font-family: 'Inter', system-ui, sans-serif; color: var(--accent);
+            background: var(--card-bg); border: 1.5px solid rgba(0,0,0,0.1);
+            border-radius: 8px; cursor: pointer; transition: all 0.2s;
+        }
+        .io-bar button:hover { border-color: var(--accent); background: rgba(37,99,235,0.04); }
+        .io-feedback {
+            font-size: 0.8rem; font-weight: 600; margin-left: 0.5rem;
+            opacity: 0; transition: opacity 0.3s;
+        }
+        .io-feedback.visible { opacity: 1; }
+        .io-feedback.success { color: #16a34a; }
+        .io-feedback.error { color: #dc2626; }
+
+        /* ── Comparison table ── */
+        .comparison-table {
+            width: 100%; border-collapse: collapse; font-size: 0.88rem;
+            margin-bottom: 1.5rem;
+        }
+        .comparison-table th, .comparison-table td {
+            padding: 0.7rem 0.85rem; text-align: right;
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+        }
+        .comparison-table th:first-child, .comparison-table td:first-child {
+            text-align: left;
+        }
+        .comparison-table th {
+            font-weight: 700; font-size: 0.7rem; text-transform: uppercase;
+            letter-spacing: 0.04em; color: var(--text-secondary);
+        }
+        .comparison-table .section-header td {
+            font-weight: 700; padding-top: 1rem; border-bottom: 2px solid rgba(0,0,0,0.1);
+            color: var(--text-primary); font-size: 0.82rem; text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+        .comparison-table .total-row {
+            font-weight: 700; border-top: 2px solid var(--accent);
+        }
+        .comparison-table .total-row td {
+            padding-top: 0.85rem; font-size: 0.95rem;
+        }
+        .comparison-table .highlight {
+            background: rgba(37,99,235,0.04);
+        }
+        .comparison-table .best-val { color: #16a34a; font-weight: 700; }
+        .comparison-table .worst-val { color: #dc2626; }
+
+        /* ── Research footnotes ── */
+        .footnotes {
+            background: rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.06);
+            border-radius: 8px; padding: 1rem 1.25rem; margin-top: 1.5rem;
+            font-size: 0.75rem; color: var(--text-secondary); line-height: 1.65;
+        }
+        .footnotes summary {
+            font-size: 0.78rem; font-weight: 700; cursor: pointer;
+            padding: 0; background: none; color: var(--text-secondary);
+        }
+        .footnotes summary::after { content: none; }
+        .footnotes p { margin: 0.35rem 0; }
+
+        /* ── Dark mode ── */
+        @media (prefers-color-scheme: dark) {
+            .role-card { background: rgba(255,255,255,0.02); border-color: rgba(255,255,255,0.08); }
+            .role-card:hover { border-color: rgba(255,255,255,0.15); }
+            .cost-item input, .cost-item select { border-color: rgba(255,255,255,0.12); }
+            .comparison-table .section-header td { border-bottom-color: rgba(255,255,255,0.15); }
+            .comparison-table th, .comparison-table td { border-bottom-color: rgba(255,255,255,0.06); }
+            .comparison-table .highlight { background: rgba(96,165,250,0.06); }
+            .footnotes { background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.08); }
+            .io-bar button { border-color: rgba(255,255,255,0.12); }
+        }
+
+        /* ── Mobile ── */
+        @media (max-width: 600px) {
+            .role-grid { grid-template-columns: 1fr; }
+            .cost-item { grid-template-columns: 1fr 1fr; }
+            .cost-item .cost-applies { grid-column: 1 / -1; }
+            .comparison-table { font-size: 0.78rem; }
+            .comparison-table th, .comparison-table td { padding: 0.5rem 0.4rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <my-header></my-header>
+
+    <a href="../" class="back-link">&larr; All Tools</a>
+
+    <section class="page-intro">
+        <p class="subtitle">Workforce Planning</p>
+        <h1>Work Model Cost Comparison</h1>
+        <p>Compare the true cost of remote, hybrid, and in-person teams. Model office space, stipends, events, turnover, multi-state hiring savings, and compliance — all client-side.</p>
+    </section>
+
+    <div class="calc-form">
+
+        <!-- Tabs -->
+        <div class="model-tabs">
+            <button class="model-tab active" onclick="switchTab('team')">Team Roster</button>
+            <button class="model-tab" onclick="switchTab('models')">Work Models</button>
+            <button class="model-tab" onclick="switchTab('costs')">Cost Inputs</button>
+            <button class="model-tab" onclick="switchTab('results')">Results</button>
+        </div>
+
+        <!-- ═══════════════════ TAB 1: TEAM ROSTER ═══════════════════ -->
+        <div id="tab-team" class="tab-panel active">
+            <p class="section-title" style="margin-top:0; border:none; padding-top:0;">
+                Add roles to your team. Salaries adjust by metro tier to model multi-state hiring savings.
+            </p>
+
+            <div class="form-grid" style="margin-bottom:1rem;">
+                <div class="form-group">
+                    <label>Default Metro Tier</label>
+                    <select id="defaultTier" onchange="updateTierHints()">
+                        <option value="tier1">Tier 1 — SF, NYC, Seattle (+18-25%)</option>
+                        <option value="tier2" selected>Tier 2 — Austin, Denver, Miami (baseline)</option>
+                        <option value="tier3">Tier 3 — Raleigh, SLC, Boise (-8-15%)</option>
+                    </select>
+                    <span class="metro-info">71% of companies use location-based pay for remote workers.</span>
+                </div>
+            </div>
+
+            <div id="rolesList"></div>
+
+            <div style="display:flex; gap:0.65rem; flex-wrap:wrap; margin-top:0.5rem;">
+                <button class="add-btn" onclick="addRole('engineer')" style="flex:1; min-width:120px;">+ Engineer</button>
+                <button class="add-btn" onclick="addRole('designer')" style="flex:1; min-width:120px;">+ Designer</button>
+                <button class="add-btn" onclick="addRole('pm')" style="flex:1; min-width:120px;">+ Product Manager</button>
+                <button class="add-btn" onclick="addRole('sales')" style="flex:1; min-width:120px;">+ Sales</button>
+                <button class="add-btn" onclick="addRole('ops')" style="flex:1; min-width:120px;">+ Operations</button>
+                <button class="add-btn" onclick="addRole('exec')" style="flex:1; min-width:120px;">+ Executive</button>
+                <button class="add-btn" onclick="addRole('custom')" style="flex:1; min-width:120px;">+ Custom Role</button>
+            </div>
+        </div>
+
+        <!-- ═══════════════════ TAB 2: WORK MODELS ═══════════════════ -->
+        <div id="tab-models" class="tab-panel">
+            <p class="section-title" style="margin-top:0; border:none; padding-top:0;">
+                Configure what each work model looks like for your company.
+            </p>
+
+            <!-- In-Person -->
+            <div class="role-card">
+                <div class="role-card-header">
+                    <span class="role-card-title">In-Person (5 days/week)</span>
+                </div>
+                <div class="role-grid">
+                    <div class="form-group">
+                        <label>Cost per Seat / Year</label>
+                        <input type="number" id="ipSeatCost" value="15000" min="0">
+                        <span class="metro-info">National avg: $8K-$18K depending on market.</span>
+                    </div>
+                    <div class="form-group">
+                        <label>Sq Ft per Person</label>
+                        <input type="number" id="ipSqft" value="150" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Utilities & Maint / Seat / Year</label>
+                        <input type="number" id="ipUtilities" value="2400" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Equipment / Person (one-time)</label>
+                        <input type="number" id="ipEquipment" value="2500" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Metro Tier for Office</label>
+                        <select id="ipOfficeTier">
+                            <option value="tier1">Tier 1 — High-cost metro</option>
+                            <option value="tier2" selected>Tier 2 — Mid-cost metro</option>
+                            <option value="tier3">Tier 3 — Low-cost metro</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Salary Tier Override</label>
+                        <select id="ipSalaryTier">
+                            <option value="">Use default tier</option>
+                            <option value="tier1">Tier 1 salaries</option>
+                            <option value="tier2">Tier 2 salaries</option>
+                            <option value="tier3">Tier 3 salaries</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hybrid -->
+            <div class="role-card">
+                <div class="role-card-header">
+                    <span class="role-card-title">Hybrid</span>
+                </div>
+                <div class="role-grid">
+                    <div class="form-group">
+                        <label>In-Office Days / Week</label>
+                        <input type="number" id="hybridDays" value="3" min="1" max="4">
+                    </div>
+                    <div class="form-group">
+                        <label>Desk Sharing Ratio</label>
+                        <select id="hybridDeskRatio">
+                            <option value="1">1:1 — dedicated desks</option>
+                            <option value="0.7" selected>1.4:1 — light hotdesking</option>
+                            <option value="0.5">2:1 — full hotdesking</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Cost per Seat / Year</label>
+                        <input type="number" id="hybridSeatCost" value="12000" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Utilities & Maint / Seat / Year</label>
+                        <input type="number" id="hybridUtilities" value="2000" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>WFH Stipend / Person / Year</label>
+                        <input type="number" id="hybridStipend" value="1200" min="0">
+                        <span class="metro-info">Avg recurring: $75-$150/month.</span>
+                    </div>
+                    <div class="form-group">
+                        <label>Equipment / Person (one-time)</label>
+                        <input type="number" id="hybridEquipment" value="2000" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Metro Tier for Office</label>
+                        <select id="hybridOfficeTier">
+                            <option value="tier1">Tier 1 — High-cost metro</option>
+                            <option value="tier2" selected>Tier 2 — Mid-cost metro</option>
+                            <option value="tier3">Tier 3 — Low-cost metro</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Salary Tier Override</label>
+                        <select id="hybridSalaryTier">
+                            <option value="">Use default tier</option>
+                            <option value="tier1">Tier 1 salaries</option>
+                            <option value="tier2">Tier 2 salaries</option>
+                            <option value="tier3">Tier 3 salaries</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Remote -->
+            <div class="role-card">
+                <div class="role-card-header">
+                    <span class="role-card-title">Fully Remote</span>
+                </div>
+                <div class="role-grid">
+                    <div class="form-group">
+                        <label>WFH Stipend / Person / Year</label>
+                        <input type="number" id="remoteStipend" value="1500" min="0">
+                        <span class="metro-info">Avg one-time setup: $1,000-$1,500 + monthly.</span>
+                    </div>
+                    <div class="form-group">
+                        <label>Co-working Credits / Person / Year</label>
+                        <input type="number" id="remoteCoworking" value="2400" min="0">
+                        <span class="metro-info">National coworking median: ~$220/mo.</span>
+                    </div>
+                    <div class="form-group">
+                        <label>Equipment / Person (one-time)</label>
+                        <input type="number" id="remoteEquipment" value="2500" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Salary Tier Override</label>
+                        <select id="remoteSalaryTier">
+                            <option value="">Use default tier</option>
+                            <option value="tier1">Tier 1 salaries</option>
+                            <option value="tier2">Tier 2 salaries</option>
+                            <option value="tier3">Tier 3 — hire in low-cost markets</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Multi-State Compliance / Person / Year</label>
+                        <input type="number" id="remoteCompliance" value="800" min="0">
+                        <span class="metro-info">Registration, payroll tax setup, legal per new state.</span>
+                    </div>
+                    <div class="form-group">
+                        <label>Number of States</label>
+                        <input type="number" id="remoteStates" value="5" min="1" max="50">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══════════════════ TAB 3: COST INPUTS ═══════════════════ -->
+        <div id="tab-costs" class="tab-panel">
+            <p class="section-title" style="margin-top:0; border:none; padding-top:0;">
+                Company-wide costs that vary by work model. Per-person or flat annual amounts.
+            </p>
+
+            <!-- Culture & Events -->
+            <h3 class="section-title">Culture & Events</h3>
+            <div id="eventsList"></div>
+            <button class="add-btn" onclick="addEvent()" style="margin-top:0.35rem;">+ Add Event / Program</button>
+
+            <!-- Benefits & Overhead -->
+            <h3 class="section-title">Benefits & Overhead</h3>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Benefits Load (% of Salary)</label>
+                    <input type="number" id="benefitsPct" value="25" min="0" max="100" step="0.5">
+                </div>
+                <div class="form-group">
+                    <label>Payroll Tax (% of Salary)</label>
+                    <input type="number" id="payrollTaxPct" value="8" min="0" max="30" step="0.5">
+                </div>
+                <div class="form-group">
+                    <label>Recruiting Cost per Hire</label>
+                    <input type="number" id="recruitingCost" value="12000" min="0">
+                </div>
+                <div class="form-group">
+                    <label>Onboarding Cost per Hire</label>
+                    <input type="number" id="onboardingCost" value="5000" min="0">
+                </div>
+                <div class="form-group">
+                    <label>Travel Budget / Remote Employee / Year</label>
+                    <input type="number" id="remoteTravelBudget" value="4000" min="0">
+                    <span class="metro-info">For company offsites, team meetups, etc.</span>
+                </div>
+                <div class="form-group">
+                    <label>Travel Budget / Hybrid Employee / Year</label>
+                    <input type="number" id="hybridTravelBudget" value="1500" min="0">
+                </div>
+            </div>
+
+            <!-- Turnover assumptions -->
+            <h3 class="section-title">Turnover Assumptions</h3>
+            <p class="metro-info" style="margin-bottom:0.75rem;">
+                Research shows hybrid reduces turnover by ~33% vs. in-person. Fully remote reduces it by ~25%. Adjust below to match your industry.
+            </p>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>In-Person Turnover Multiplier</label>
+                    <input type="number" id="turnoverIP" value="1.0" min="0" max="3" step="0.05">
+                    <span class="metro-info">Baseline = 1.0×</span>
+                </div>
+                <div class="form-group">
+                    <label>Hybrid Turnover Multiplier</label>
+                    <input type="number" id="turnoverHybrid" value="0.67" min="0" max="3" step="0.05">
+                    <span class="metro-info">Default: 33% reduction (Stanford/Nature)</span>
+                </div>
+                <div class="form-group">
+                    <label>Remote Turnover Multiplier</label>
+                    <input type="number" id="turnoverRemote" value="0.75" min="0" max="3" step="0.05">
+                    <span class="metro-info">Default: 25% reduction</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══════════════════ TAB 4: RESULTS ═══════════════════ -->
+        <div id="tab-results" class="tab-panel">
+            <div id="resultsArea"></div>
+        </div>
+
+        <!-- Import / Export -->
+        <div class="io-bar" style="margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid rgba(0,0,0,0.06);">
+            <button onclick="exportJSON()">&#x2B07; Export JSON</button>
+            <button onclick="document.getElementById('importFile').click()">&#x2B06; Import JSON</button>
+            <input type="file" id="importFile" accept=".json" style="display:none" onchange="handleImport(event)">
+            <span id="ioFeedback" class="io-feedback"></span>
+        </div>
+
+        <!-- Calculate -->
+        <button class="calc-btn" onclick="calculateResults(); switchTab('results');">
+            Compare Work Models
+        </button>
+
+    </div>
+
+    <my-footer></my-footer>
+</div>
+
+<script>
+/* ============================================================
+   WORKFORCE MODEL COMPARISON — CLIENT-SIDE ENGINE
+   ============================================================ */
+
+// ── Helpers ──
+const $ = id => document.getElementById(id);
+const val = id => parseFloat($(id)?.value) || 0;
+const fmt = v => !isFinite(v) ? '$0' : '$' + Math.round(v).toLocaleString('en-US');
+const fmtK = v => !isFinite(v) ? '$0' : (Math.abs(v) >= 1000 ? '$' + (v / 1000).toFixed(1) + 'K' : fmt(v));
+const pct = v => !isFinite(v) ? '0.0%' : (v * 100).toFixed(1) + '%';
+
+function escAttr(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;')
+        .replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── Metro tier salary multipliers ──
+const TIER_MULT = { tier1: 1.22, tier2: 1.0, tier3: 0.88 };
+const TIER_LABELS = { tier1: 'Tier 1 (High-Cost)', tier2: 'Tier 2 (Mid-Market)', tier3: 'Tier 3 (Low-Cost)' };
+
+// ── Role templates with base turnover rates (annual %) ──
+const ROLE_TEMPLATES = {
+    engineer:  { title: 'Software Engineer', baseSalary: 145000, turnoverRate: 0.133, replaceCostMult: 1.0 },
+    designer:  { title: 'Product Designer',  baseSalary: 125000, turnoverRate: 0.12,  replaceCostMult: 0.8 },
+    pm:        { title: 'Product Manager',    baseSalary: 140000, turnoverRate: 0.115, replaceCostMult: 0.9 },
+    sales:     { title: 'Sales Rep',          baseSalary: 95000,  turnoverRate: 0.18,  replaceCostMult: 0.5 },
+    ops:       { title: 'Operations',         baseSalary: 75000,  turnoverRate: 0.15,  replaceCostMult: 0.4 },
+    exec:      { title: 'Executive',          baseSalary: 220000, turnoverRate: 0.08,  replaceCostMult: 2.13 },
+    custom:    { title: 'Custom Role',        baseSalary: 100000, turnoverRate: 0.13,  replaceCostMult: 0.8 }
+};
+
+let roles = [];
+let events = [];
+let nextRoleId = 1;
+let nextEventId = 1;
+let charts = {};
+
+// ═══════════════════════════════════════════════════
+// TAB SWITCHING
+// ═══════════════════════════════════════════════════
+function switchTab(name) {
+    document.querySelectorAll('.model-tab').forEach((btn, i) => {
+        btn.classList.toggle('active', btn.textContent.toLowerCase().includes(name.substring(0,4)));
+    });
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    const panel = $('tab-' + name);
+    if (panel) panel.classList.add('active');
+}
+
+// ═══════════════════════════════════════════════════
+// ROLES
+// ═══════════════════════════════════════════════════
+function addRole(template) {
+    const t = ROLE_TEMPLATES[template] || ROLE_TEMPLATES.custom;
+    const role = {
+        id: nextRoleId++,
+        template: template,
+        title: t.title,
+        baseSalary: t.baseSalary,
+        headcount: template === 'exec' ? 1 : 5,
+        turnoverRate: t.turnoverRate,
+        replaceCostMult: t.replaceCostMult
+    };
+    roles.push(role);
+    renderRoles();
+}
+
+function removeRole(id) {
+    roles = roles.filter(r => r.id !== id);
+    renderRoles();
+}
+
+function renderRoles() {
+    const container = $('rolesList');
+    if (!container) return;
+    container.innerHTML = roles.map(r => `
+        <div class="role-card" data-role-id="${r.id}">
+            <div class="role-card-header">
+                <span class="role-card-title">${escAttr(r.title)}</span>
+                <button class="remove-btn" onclick="removeRole(${r.id})" title="Remove role">&times;</button>
+            </div>
+            <div class="role-grid">
+                <div class="form-group">
+                    <label>Title</label>
+                    <input type="text" value="${escAttr(r.title)}" onchange="updateRole(${r.id},'title',this.value)">
+                </div>
+                <div class="form-group">
+                    <label>Base Salary (Tier 2)</label>
+                    <input type="number" value="${r.baseSalary}" min="0" onchange="updateRole(${r.id},'baseSalary',+this.value)">
+                    <span class="metro-info">Baseline salary before tier adjustment.</span>
+                </div>
+                <div class="form-group">
+                    <label>Headcount</label>
+                    <input type="number" value="${r.headcount}" min="1" onchange="updateRole(${r.id},'headcount',+this.value)">
+                </div>
+                <div class="form-group">
+                    <label>Annual Turnover %</label>
+                    <input type="number" value="${(r.turnoverRate * 100).toFixed(1)}" min="0" max="100" step="0.5"
+                        onchange="updateRole(${r.id},'turnoverRate',+this.value/100)">
+                </div>
+                <div class="form-group">
+                    <label>Replacement Cost (× salary)</label>
+                    <input type="number" value="${r.replaceCostMult}" min="0" max="5" step="0.1"
+                        onchange="updateRole(${r.id},'replaceCostMult',+this.value)">
+                    <span class="metro-info">Entry: 0.4×, Mid: 0.8×, Exec: 2.13×</span>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function updateRole(id, field, value) {
+    const role = roles.find(r => r.id === id);
+    if (role) role[field] = value;
+}
+
+// ═══════════════════════════════════════════════════
+// EVENTS / PROGRAMS
+// ═══════════════════════════════════════════════════
+function addEvent(data) {
+    events.push({
+        id: nextEventId++,
+        name: data?.name || 'Company Offsite',
+        costPerPerson: data?.costPerPerson || 2000,
+        frequency: data?.frequency || 1,
+        appliesTo: data?.appliesTo || 'all'
+    });
+    renderEvents();
+}
+
+function removeEvent(id) {
+    events = events.filter(e => e.id !== id);
+    renderEvents();
+}
+
+function renderEvents() {
+    const container = $('eventsList');
+    if (!container) return;
+    container.innerHTML = events.map(e => `
+        <div class="cost-item" data-event-id="${e.id}">
+            <div class="form-group">
+                <label>Event / Program</label>
+                <input type="text" value="${escAttr(e.name)}" onchange="updateEvent(${e.id},'name',this.value)">
+            </div>
+            <div class="form-group">
+                <label>$ / Person</label>
+                <input type="number" value="${e.costPerPerson}" min="0" onchange="updateEvent(${e.id},'costPerPerson',+this.value)">
+            </div>
+            <div class="form-group">
+                <label>× / Year</label>
+                <input type="number" value="${e.frequency}" min="1" max="12" onchange="updateEvent(${e.id},'frequency',+this.value)">
+            </div>
+            <div class="form-group cost-applies">
+                <label>Applies To</label>
+                <select onchange="updateEvent(${e.id},'appliesTo',this.value)">
+                    <option value="all" ${e.appliesTo==='all'?'selected':''}>All Models</option>
+                    <option value="remote" ${e.appliesTo==='remote'?'selected':''}>Remote Only</option>
+                    <option value="hybrid" ${e.appliesTo==='hybrid'?'selected':''}>Hybrid Only</option>
+                    <option value="inperson" ${e.appliesTo==='inperson'?'selected':''}>In-Person Only</option>
+                    <option value="remote+hybrid" ${e.appliesTo==='remote+hybrid'?'selected':''}>Remote + Hybrid</option>
+                </select>
+            </div>
+            <button class="remove-btn" onclick="removeEvent(${e.id})" title="Remove">&times;</button>
+        </div>
+    `).join('');
+}
+
+function updateEvent(id, field, value) {
+    const ev = events.find(e => e.id === id);
+    if (ev) ev[field] = value;
+}
+
+// ═══════════════════════════════════════════════════
+// CALCULATION ENGINE
+// ═══════════════════════════════════════════════════
+function calculateResults() {
+    try {
+        if (roles.length === 0) {
+            $('resultsArea').innerHTML = '<p style="text-align:center; color:var(--text-secondary); padding:2rem;">Add at least one role in the Team Roster tab to see results.</p>';
+            return;
+        }
+
+        const totalHeadcount = roles.reduce((s, r) => s + r.headcount, 0);
+        const defaultTier = $('defaultTier').value;
+
+        // Gather model configs
+        const models = {
+            inperson: {
+                label: 'In-Person',
+                salaryTier: $('ipSalaryTier').value || defaultTier,
+                seatCost: val('ipSeatCost'),
+                utilities: val('ipUtilities'),
+                equipment: val('ipEquipment'),
+                stipend: 0,
+                coworking: 0,
+                compliance: 0,
+                deskRatio: 1,
+                travelBudget: 0,
+                turnoverMult: val('turnoverIP'),
+                officeTier: $('ipOfficeTier').value
+            },
+            hybrid: {
+                label: 'Hybrid',
+                salaryTier: $('hybridSalaryTier').value || defaultTier,
+                seatCost: val('hybridSeatCost'),
+                utilities: val('hybridUtilities'),
+                equipment: val('hybridEquipment'),
+                stipend: val('hybridStipend'),
+                coworking: 0,
+                compliance: 0,
+                deskRatio: parseFloat($('hybridDeskRatio').value) || 0.7,
+                travelBudget: val('hybridTravelBudget'),
+                turnoverMult: val('turnoverHybrid'),
+                officeTier: $('hybridOfficeTier').value
+            },
+            remote: {
+                label: 'Fully Remote',
+                salaryTier: $('remoteSalaryTier').value || defaultTier,
+                seatCost: 0,
+                utilities: 0,
+                equipment: val('remoteEquipment'),
+                stipend: val('remoteStipend'),
+                coworking: val('remoteCoworking'),
+                compliance: val('remoteCompliance'),
+                deskRatio: 0,
+                travelBudget: val('remoteTravelBudget'),
+                turnoverMult: val('turnoverRemote'),
+                officeTier: null
+            }
+        };
+
+        const benefitsPct = val('benefitsPct') / 100;
+        const payrollTaxPct = val('payrollTaxPct') / 100;
+        const recruitingCost = val('recruitingCost');
+        const onboardingCost = val('onboardingCost');
+
+        const results = {};
+
+        for (const [key, model] of Object.entries(models)) {
+            const tierMult = TIER_MULT[model.salaryTier] || 1.0;
+            let totalSalary = 0;
+            let totalTurnoverCost = 0;
+            let totalReplacementCount = 0;
+
+            for (const role of roles) {
+                const adjustedSalary = role.baseSalary * tierMult;
+                const roleTotalSalary = adjustedSalary * role.headcount;
+                totalSalary += roleTotalSalary;
+
+                const annualTurnover = role.turnoverRate * model.turnoverMult;
+                const departures = role.headcount * annualTurnover;
+                totalReplacementCount += departures;
+
+                const costPerReplacement = adjustedSalary * role.replaceCostMult + recruitingCost + onboardingCost;
+                totalTurnoverCost += departures * costPerReplacement;
+            }
+
+            const benefitsCost = totalSalary * benefitsPct;
+            const payrollTax = totalSalary * payrollTaxPct;
+            const seatsNeeded = Math.ceil(totalHeadcount * model.deskRatio);
+            const officeCost = seatsNeeded * model.seatCost;
+            const utilitiesCost = seatsNeeded * model.utilities;
+            const equipmentCost = totalHeadcount * model.equipment;
+            const stipendCost = totalHeadcount * model.stipend;
+            const coworkingCost = totalHeadcount * model.coworking;
+            const complianceCost = totalHeadcount * model.compliance;
+            const travelCost = totalHeadcount * model.travelBudget;
+
+            // Events
+            let eventsCost = 0;
+            for (const ev of events) {
+                const applies = ev.appliesTo;
+                if (applies === 'all' ||
+                    (applies === 'remote' && key === 'remote') ||
+                    (applies === 'hybrid' && key === 'hybrid') ||
+                    (applies === 'inperson' && key === 'inperson') ||
+                    (applies === 'remote+hybrid' && (key === 'remote' || key === 'hybrid'))) {
+                    eventsCost += ev.costPerPerson * ev.frequency * totalHeadcount;
+                }
+            }
+
+            const totalCost = totalSalary + benefitsCost + payrollTax + officeCost + utilitiesCost +
+                equipmentCost + stipendCost + coworkingCost + complianceCost + travelCost +
+                eventsCost + totalTurnoverCost;
+
+            results[key] = {
+                label: model.label,
+                tierMult,
+                totalHeadcount,
+                totalSalary,
+                benefitsCost,
+                payrollTax,
+                officeCost,
+                utilitiesCost,
+                seatsNeeded,
+                equipmentCost,
+                stipendCost,
+                coworkingCost,
+                complianceCost,
+                travelCost,
+                eventsCost,
+                totalTurnoverCost,
+                totalReplacementCount,
+                totalCost,
+                costPerEmployee: totalCost / totalHeadcount
+            };
+        }
+
+        renderResults(results);
+    } catch (err) {
+        $('resultsArea').innerHTML = '<div style="color:#dc2626; padding:1rem; text-align:center;">Error: ' + escAttr(err.message) + '</div>';
+        console.error(err);
+    }
+}
+
+// ═══════════════════════════════════════════════════
+// RENDER RESULTS
+// ═══════════════════════════════════════════════════
+function renderResults(r) {
+    const keys = ['inperson', 'hybrid', 'remote'];
+    const costs = keys.map(k => r[k].totalCost);
+    const minCost = Math.min(...costs);
+    const maxCost = Math.max(...costs);
+    const savings = maxCost - minCost;
+    const bestKey = keys[costs.indexOf(minCost)];
+
+    // Hero
+    let html = `
+        <div class="results-hero positive" style="margin-bottom: 1.5rem;">
+            <div class="hero-value">${fmt(savings)}</div>
+            <div class="hero-sub">Annual savings: ${r[bestKey].label} vs. most expensive option</div>
+            <div class="hero-label">${r[bestKey].label} is the most cost-effective model</div>
+        </div>
+    `;
+
+    // Stat cards
+    html += '<div class="stat-row">';
+    for (const k of keys) {
+        const isBest = k === bestKey;
+        html += `
+            <div class="stat-card">
+                <div class="val ${isBest ? 'green' : ''}">${fmt(r[k].totalCost)}</div>
+                <div class="lbl">${r[k].label} — Total Annual</div>
+            </div>
+        `;
+    }
+    html += `
+        <div class="stat-card">
+            <div class="val">${r.inperson.totalHeadcount}</div>
+            <div class="lbl">Total Headcount</div>
+        </div>
+    </div>`;
+
+    // Per-employee cards
+    html += '<div class="stat-row">';
+    for (const k of keys) {
+        html += `
+            <div class="stat-card">
+                <div class="val">${fmt(r[k].costPerEmployee)}</div>
+                <div class="lbl">${r[k].label} — Per Employee</div>
+            </div>
+        `;
+    }
+    const turnoverCosts = keys.map(k => r[k].totalTurnoverCost);
+    const minTurnover = Math.min(...turnoverCosts);
+    const bestTurnoverKey = keys[turnoverCosts.indexOf(minTurnover)];
+    html += `
+        <div class="stat-card">
+            <div class="val green">${fmt(r[keys[costs.indexOf(maxCost)]].totalTurnoverCost - r[bestTurnoverKey].totalTurnoverCost)}</div>
+            <div class="lbl">Turnover Cost Savings (${r[bestTurnoverKey].label})</div>
+        </div>
+    </div>`;
+
+    // ── Comparison Table ──
+    html += '<div class="chart-card"><h3>Detailed Cost Comparison</h3>';
+    html += '<div style="overflow-x:auto;"><table class="comparison-table">';
+    html += `<thead><tr><th>Cost Category</th>${keys.map(k => '<th>' + r[k].label + '</th>').join('')}</tr></thead><tbody>`;
+
+    const addRow = (label, field, isHighlight) => {
+        const vals = keys.map(k => r[k][field]);
+        const min = Math.min(...vals);
+        const max = Math.max(...vals);
+        html += `<tr class="${isHighlight ? 'highlight' : ''}">`;
+        html += `<td>${label}</td>`;
+        vals.forEach(v => {
+            const cls = v === min && min !== max ? 'best-val' : (v === max && min !== max ? 'worst-val' : '');
+            html += `<td class="${cls}">${fmt(v)}</td>`;
+        });
+        html += '</tr>';
+    };
+
+    const addSection = (title) => {
+        html += `<tr class="section-header"><td colspan="4">${title}</td></tr>`;
+    };
+
+    addSection('Compensation');
+    addRow('Total Salaries', 'totalSalary');
+    addRow('Benefits', 'benefitsCost');
+    addRow('Payroll Tax', 'payrollTax');
+
+    addSection('Workspace');
+    addRow('Office / Lease', 'officeCost');
+    addRow('Utilities & Maintenance', 'utilitiesCost');
+    addRow('Equipment (amortized)', 'equipmentCost');
+    addRow('WFH Stipend', 'stipendCost');
+    addRow('Co-working Credits', 'coworkingCost');
+
+    addSection('Operations');
+    addRow('Multi-State Compliance', 'complianceCost');
+    addRow('Travel & Meetups', 'travelCost');
+    addRow('Events & Programs', 'eventsCost');
+
+    addSection('Retention');
+    addRow('Turnover Cost', 'totalTurnoverCost');
+
+    // Total row
+    html += '<tr class="total-row"><td>Total Annual Cost</td>';
+    keys.forEach(k => {
+        const cls = r[k].totalCost === minCost ? 'best-val' : (r[k].totalCost === maxCost ? 'worst-val' : '');
+        html += `<td class="${cls}">${fmt(r[k].totalCost)}</td>`;
+    });
+    html += '</tr>';
+
+    // Per employee row
+    html += '<tr class="highlight"><td>Cost per Employee</td>';
+    const perEmp = keys.map(k => r[k].costPerEmployee);
+    const minPE = Math.min(...perEmp);
+    const maxPE = Math.max(...perEmp);
+    keys.forEach(k => {
+        const v = r[k].costPerEmployee;
+        const cls = v === minPE && minPE !== maxPE ? 'best-val' : (v === maxPE && minPE !== maxPE ? 'worst-val' : '');
+        html += `<td class="${cls}">${fmt(v)}</td>`;
+    });
+    html += '</tr>';
+
+    html += '</tbody></table></div></div>';
+
+    // ── Charts ──
+    html += `
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1.5rem; margin-bottom:1.5rem;">
+            <div class="chart-card"><h3>Total Cost Breakdown</h3><div class="chart-wrap"><canvas id="chartBreakdown"></canvas></div></div>
+            <div class="chart-card"><h3>Turnover Impact</h3><div class="chart-wrap"><canvas id="chartTurnover"></canvas></div></div>
+        </div>
+        <div class="chart-card"><h3>Cost per Employee by Category</h3><div class="chart-wrap"><canvas id="chartPerEmployee"></canvas></div></div>
+    `;
+
+    // ── Turnover detail table ──
+    html += '<div class="chart-card"><h3>Estimated Annual Turnover</h3>';
+    html += '<div style="overflow-x:auto;"><table class="comparison-table">';
+    html += `<thead><tr><th>Role</th><th>Headcount</th>${keys.map(k => '<th>' + r[k].label + ' Departures</th>').join('')}${keys.map(k => '<th>' + r[k].label + ' Cost</th>').join('')}</tr></thead><tbody>`;
+
+    for (const role of roles) {
+        html += `<tr><td>${escAttr(role.title)}</td><td>${role.headcount}</td>`;
+        for (const k of keys) {
+            const m = { inperson: val('turnoverIP'), hybrid: val('turnoverHybrid'), remote: val('turnoverRemote') };
+            const dep = role.headcount * role.turnoverRate * m[k];
+            html += `<td>${dep.toFixed(1)}</td>`;
+        }
+        for (const k of keys) {
+            const tierMult = TIER_MULT[($(`${k === 'inperson' ? 'ip' : k}SalaryTier`)?.value) || $('defaultTier').value] || 1.0;
+            const m = { inperson: val('turnoverIP'), hybrid: val('turnoverHybrid'), remote: val('turnoverRemote') };
+            const adjSal = role.baseSalary * tierMult;
+            const dep = role.headcount * role.turnoverRate * m[k];
+            const cost = dep * (adjSal * role.replaceCostMult + val('recruitingCost') + val('onboardingCost'));
+            html += `<td>${fmt(cost)}</td>`;
+        }
+        html += '</tr>';
+    }
+    html += '</tbody></table></div></div>';
+
+    // Footnotes
+    html += `
+        <details class="footnotes">
+            <summary>Research &amp; Data Sources</summary>
+            <p><strong>Turnover reduction:</strong> A Stanford study published in Nature found a 33% reduction in employee turnover for hybrid arrangements vs. fully in-office teams. 29% of employees indicate they would leave if forced back full-time.</p>
+            <p><strong>Replacement costs:</strong> Entry-level ~40% of salary, mid-level ~80%, managers ~200%, C-level up to 213% of annual salary (SHRM, Gallup 2025).</p>
+            <p><strong>Office costs:</strong> National average $32.79/sqft (Yardi Matrix Feb 2026). Tier 1 metros (SF/NYC): $65-$90/sqft. Tier 2 (Austin, Denver): $35-$50/sqft.</p>
+            <p><strong>WFH stipends:</strong> Average one-time setup $1,000-$1,500. Monthly recurring $75-$150. 62% of US companies offer remote work stipends (SHRM).</p>
+            <p><strong>Salary differentials:</strong> 71% of companies use location-based pay. Tier 1 metros command +18-25% premium. Tier 3 metros see -8-15% adjustment. US organizations projecting 3.6% salary increase budgets in 2026.</p>
+            <p><strong>Multi-state compliance:</strong> 15 states require withholding after a single day of work. Non-compliance costs can be ~3× proactive compliance costs. Registration in new states requires 30-60 day lead time.</p>
+        </details>
+    `;
+
+    $('resultsArea').innerHTML = html;
+
+    // Render charts after DOM update
+    setTimeout(() => renderCharts(r, keys), 50);
+}
+
+// ═══════════════════════════════════════════════════
+// CHARTS
+// ═══════════════════════════════════════════════════
+function renderCharts(r, keys) {
+    // Destroy existing
+    Object.values(charts).forEach(c => { try { c.destroy(); } catch(e) {} });
+    charts = {};
+
+    const labels = keys.map(k => r[k].label);
+    const colors = ['#2563eb', '#8b5cf6', '#16a34a'];
+    const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const textColor = isDark ? '#d1d5db' : '#6b7280';
+    const gridColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
+
+    const defaultOptions = {
+        responsive: true,
+        plugins: {
+            legend: { labels: { color: textColor, font: { family: 'Inter', size: 11 } } },
+            tooltip: {
+                callbacks: { label: ctx => ctx.dataset.label + ': ' + fmt(ctx.raw) }
+            }
+        },
+        scales: {
+            x: { ticks: { color: textColor, font: { family: 'Inter', size: 11 } }, grid: { color: gridColor } },
+            y: { ticks: { color: textColor, font: { family: 'Inter', size: 11 }, callback: v => fmtK(v) }, grid: { color: gridColor } }
+        }
+    };
+
+    // Breakdown stacked bar
+    const categories = [
+        { label: 'Compensation', field: k => r[k].totalSalary + r[k].benefitsCost + r[k].payrollTax, color: '#2563eb' },
+        { label: 'Workspace', field: k => r[k].officeCost + r[k].utilitiesCost + r[k].equipmentCost + r[k].stipendCost + r[k].coworkingCost, color: '#8b5cf6' },
+        { label: 'Operations', field: k => r[k].complianceCost + r[k].travelCost + r[k].eventsCost, color: '#f59e0b' },
+        { label: 'Turnover', field: k => r[k].totalTurnoverCost, color: '#dc2626' }
+    ];
+
+    const el1 = $('chartBreakdown');
+    if (el1) {
+        charts.breakdown = new Chart(el1, {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: categories.map(cat => ({
+                    label: cat.label,
+                    data: keys.map(k => cat.field(k)),
+                    backgroundColor: cat.color + '99',
+                    borderColor: cat.color,
+                    borderWidth: 1
+                }))
+            },
+            options: { ...defaultOptions, scales: { ...defaultOptions.scales, x: { ...defaultOptions.scales.x, stacked: true }, y: { ...defaultOptions.scales.y, stacked: true } } }
+        });
+    }
+
+    // Turnover bar chart
+    const el2 = $('chartTurnover');
+    if (el2) {
+        charts.turnover = new Chart(el2, {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: [
+                    {
+                        label: 'Turnover Cost',
+                        data: keys.map(k => r[k].totalTurnoverCost),
+                        backgroundColor: colors.map(c => c + '66'),
+                        borderColor: colors,
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Est. Departures',
+                        data: keys.map(k => r[k].totalReplacementCount),
+                        backgroundColor: 'rgba(107,114,128,0.2)',
+                        borderColor: '#6b7280',
+                        borderWidth: 1,
+                        yAxisID: 'y1'
+                    }
+                ]
+            },
+            options: {
+                ...defaultOptions,
+                scales: {
+                    ...defaultOptions.scales,
+                    y1: {
+                        position: 'right',
+                        ticks: { color: textColor, font: { family: 'Inter', size: 11 } },
+                        grid: { drawOnChartArea: false },
+                        title: { display: true, text: 'Departures', color: textColor, font: { family: 'Inter', size: 11 } }
+                    }
+                }
+            }
+        });
+    }
+
+    // Per-employee grouped bar
+    const el3 = $('chartPerEmployee');
+    if (el3) {
+        const perEmpCategories = [
+            { label: 'Salary + Benefits', field: k => (r[k].totalSalary + r[k].benefitsCost + r[k].payrollTax) / r[k].totalHeadcount, color: '#2563eb' },
+            { label: 'Workspace', field: k => (r[k].officeCost + r[k].utilitiesCost + r[k].equipmentCost + r[k].stipendCost + r[k].coworkingCost) / r[k].totalHeadcount, color: '#8b5cf6' },
+            { label: 'Ops & Travel', field: k => (r[k].complianceCost + r[k].travelCost + r[k].eventsCost) / r[k].totalHeadcount, color: '#f59e0b' },
+            { label: 'Turnover (avg)', field: k => r[k].totalTurnoverCost / r[k].totalHeadcount, color: '#dc2626' }
+        ];
+
+        charts.perEmployee = new Chart(el3, {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: perEmpCategories.map(cat => ({
+                    label: cat.label,
+                    data: keys.map(k => cat.field(k)),
+                    backgroundColor: cat.color + '80',
+                    borderColor: cat.color,
+                    borderWidth: 1
+                }))
+            },
+            options: defaultOptions
+        });
+    }
+}
+
+// ═══════════════════════════════════════════════════
+// IMPORT / EXPORT
+// ═══════════════════════════════════════════════════
+function buildExportData() {
+    return {
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        settings: {
+            defaultTier: $('defaultTier').value,
+            benefitsPct: val('benefitsPct'),
+            payrollTaxPct: val('payrollTaxPct'),
+            recruitingCost: val('recruitingCost'),
+            onboardingCost: val('onboardingCost'),
+            remoteTravelBudget: val('remoteTravelBudget'),
+            hybridTravelBudget: val('hybridTravelBudget'),
+            turnoverIP: val('turnoverIP'),
+            turnoverHybrid: val('turnoverHybrid'),
+            turnoverRemote: val('turnoverRemote')
+        },
+        models: {
+            inperson: {
+                seatCost: val('ipSeatCost'), sqft: val('ipSqft'), utilities: val('ipUtilities'),
+                equipment: val('ipEquipment'), officeTier: $('ipOfficeTier').value,
+                salaryTier: $('ipSalaryTier').value
+            },
+            hybrid: {
+                days: val('hybridDays'), deskRatio: $('hybridDeskRatio').value,
+                seatCost: val('hybridSeatCost'), utilities: val('hybridUtilities'),
+                stipend: val('hybridStipend'), equipment: val('hybridEquipment'),
+                officeTier: $('hybridOfficeTier').value, salaryTier: $('hybridSalaryTier').value
+            },
+            remote: {
+                stipend: val('remoteStipend'), coworking: val('remoteCoworking'),
+                equipment: val('remoteEquipment'), salaryTier: $('remoteSalaryTier').value,
+                compliance: val('remoteCompliance'), states: val('remoteStates')
+            }
+        },
+        roles: roles.map(r => ({
+            title: r.title, template: r.template, baseSalary: r.baseSalary,
+            headcount: r.headcount, turnoverRate: r.turnoverRate, replaceCostMult: r.replaceCostMult
+        })),
+        events: events.map(e => ({
+            name: e.name, costPerPerson: e.costPerPerson, frequency: e.frequency, appliesTo: e.appliesTo
+        }))
+    };
+}
+
+function exportJSON() {
+    const data = buildExportData();
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    downloadBlob(blob, 'workforce-model.json');
+    showFeedback('success', 'Exported ' + roles.length + ' roles and ' + events.length + ' events.');
+}
+
+function handleImport(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    event.target.value = '';
+
+    const reader = new FileReader();
+    reader.onload = e => {
+        try {
+            const data = JSON.parse(e.target.result);
+            importJSON(data);
+            showFeedback('success', 'Imported ' + roles.length + ' roles and ' + events.length + ' events.');
+        } catch (err) {
+            showFeedback('error', 'Import failed: ' + err.message);
+        }
+    };
+    reader.readAsText(file);
+}
+
+function importJSON(data) {
+    if (!data.version || !data.roles) throw new Error('Invalid file format.');
+
+    // Settings
+    const s = data.settings || {};
+    if (s.defaultTier) $('defaultTier').value = s.defaultTier;
+    if (s.benefitsPct != null) $('benefitsPct').value = s.benefitsPct;
+    if (s.payrollTaxPct != null) $('payrollTaxPct').value = s.payrollTaxPct;
+    if (s.recruitingCost != null) $('recruitingCost').value = s.recruitingCost;
+    if (s.onboardingCost != null) $('onboardingCost').value = s.onboardingCost;
+    if (s.remoteTravelBudget != null) $('remoteTravelBudget').value = s.remoteTravelBudget;
+    if (s.hybridTravelBudget != null) $('hybridTravelBudget').value = s.hybridTravelBudget;
+    if (s.turnoverIP != null) $('turnoverIP').value = s.turnoverIP;
+    if (s.turnoverHybrid != null) $('turnoverHybrid').value = s.turnoverHybrid;
+    if (s.turnoverRemote != null) $('turnoverRemote').value = s.turnoverRemote;
+
+    // Models
+    const m = data.models || {};
+    if (m.inperson) {
+        if (m.inperson.seatCost != null) $('ipSeatCost').value = m.inperson.seatCost;
+        if (m.inperson.sqft != null) $('ipSqft').value = m.inperson.sqft;
+        if (m.inperson.utilities != null) $('ipUtilities').value = m.inperson.utilities;
+        if (m.inperson.equipment != null) $('ipEquipment').value = m.inperson.equipment;
+        if (m.inperson.officeTier) $('ipOfficeTier').value = m.inperson.officeTier;
+        if (m.inperson.salaryTier) $('ipSalaryTier').value = m.inperson.salaryTier;
+    }
+    if (m.hybrid) {
+        if (m.hybrid.days != null) $('hybridDays').value = m.hybrid.days;
+        if (m.hybrid.deskRatio) $('hybridDeskRatio').value = m.hybrid.deskRatio;
+        if (m.hybrid.seatCost != null) $('hybridSeatCost').value = m.hybrid.seatCost;
+        if (m.hybrid.utilities != null) $('hybridUtilities').value = m.hybrid.utilities;
+        if (m.hybrid.stipend != null) $('hybridStipend').value = m.hybrid.stipend;
+        if (m.hybrid.equipment != null) $('hybridEquipment').value = m.hybrid.equipment;
+        if (m.hybrid.officeTier) $('hybridOfficeTier').value = m.hybrid.officeTier;
+        if (m.hybrid.salaryTier) $('hybridSalaryTier').value = m.hybrid.salaryTier;
+    }
+    if (m.remote) {
+        if (m.remote.stipend != null) $('remoteStipend').value = m.remote.stipend;
+        if (m.remote.coworking != null) $('remoteCoworking').value = m.remote.coworking;
+        if (m.remote.equipment != null) $('remoteEquipment').value = m.remote.equipment;
+        if (m.remote.salaryTier) $('remoteSalaryTier').value = m.remote.salaryTier;
+        if (m.remote.compliance != null) $('remoteCompliance').value = m.remote.compliance;
+        if (m.remote.states != null) $('remoteStates').value = m.remote.states;
+    }
+
+    // Roles
+    roles = [];
+    nextRoleId = 1;
+    (data.roles || []).forEach(r => {
+        roles.push({
+            id: nextRoleId++,
+            template: r.template || 'custom',
+            title: r.title || 'Untitled',
+            baseSalary: r.baseSalary || 100000,
+            headcount: r.headcount || 1,
+            turnoverRate: r.turnoverRate || 0.13,
+            replaceCostMult: r.replaceCostMult || 0.8
+        });
+    });
+    renderRoles();
+
+    // Events
+    events = [];
+    nextEventId = 1;
+    (data.events || []).forEach(e => {
+        addEvent(e);
+    });
+}
+
+function downloadBlob(blob, filename) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); document.body.removeChild(a); }, 100);
+}
+
+function showFeedback(type, msg) {
+    const el = $('ioFeedback');
+    if (!el) return;
+    el.textContent = msg;
+    el.className = 'io-feedback visible ' + type;
+    setTimeout(() => el.classList.remove('visible'), 4000);
+}
+
+// ═══════════════════════════════════════════════════
+// INIT — load starter roles and events
+// ═══════════════════════════════════════════════════
+function init() {
+    addRole('engineer');
+    addRole('pm');
+    addRole('sales');
+    addEvent({ name: 'Annual Company Offsite', costPerPerson: 2500, frequency: 1, appliesTo: 'all' });
+    addEvent({ name: 'Quarterly Team Meetup', costPerPerson: 800, frequency: 4, appliesTo: 'remote+hybrid' });
+    addEvent({ name: 'Holiday Party', costPerPerson: 150, frequency: 1, appliesTo: 'all' });
+}
+
+init();
+</script>
+</body>
+</html>
