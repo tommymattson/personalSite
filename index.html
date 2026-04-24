@@ -6,8 +6,38 @@
     <title>Thomas Mattson | Systems & Operations</title>
     <link rel="stylesheet" href="styles.css">
     <script src="main.js" defer></script>
+    <style>
+        /* ── Cursor crosshair (home page only) ── */
+        .xhair { position: fixed; pointer-events: none; z-index: 60; mix-blend-mode: difference; color: #fff; }
+        .xhair .xh-h, .xhair .xh-v { position: fixed; background: rgba(37,99,235,0.45); }
+        .xhair .xh-h { left: 0; right: 0; height: 1px; }
+        .xhair .xh-v { top: 0; bottom: 0; width: 1px; }
+        .xhair .xh-coord {
+            position: fixed; font-family: 'Inter', system-ui, sans-serif;
+            font-size: 10px; font-weight: 600; letter-spacing: 0.06em;
+            color: var(--accent, #2563eb); background: var(--card-bg, #fff);
+            border: 1px solid var(--text-primary, #111827);
+            padding: 2px 7px; border-radius: 4px;
+            transform: translate(14px, 14px);
+        }
+        /* Hide on touch / small screens */
+        @media (hover: none), (max-width: 768px) {
+            .xhair { display: none; }
+        }
+        @media (prefers-color-scheme: dark) {
+            .xhair .xh-h, .xhair .xh-v { background: rgba(96,165,250,0.4); }
+            .xhair .xh-coord { border-color: rgba(255,255,255,0.25); }
+        }
+    </style>
 </head>
 <body>
+
+    <!-- Cursor crosshair -->
+    <div class="xhair" id="xhair" aria-hidden="true">
+        <div class="xh-h" id="xhH"></div>
+        <div class="xh-v" id="xhV"></div>
+        <div class="xh-coord" id="xhC">000 · 000</div>
+    </div>
 
     <div class="container">
         
@@ -107,5 +137,27 @@
         <my-footer></my-footer>
     </div>
 
+<script>
+    // ── Crosshair mouse tracker ──
+    (function() {
+        const xh = document.getElementById('xhair');
+        if (!xh || window.matchMedia('(hover: none)').matches) return;
+        const H = document.getElementById('xhH');
+        const V = document.getElementById('xhV');
+        const C = document.getElementById('xhC');
+
+        window.addEventListener('pointermove', function(e) {
+            H.style.top  = e.clientY + 'px';
+            V.style.left = e.clientX + 'px';
+            C.style.left = e.clientX + 'px';
+            C.style.top  = e.clientY + 'px';
+            C.textContent = String(e.clientX).padStart(3, '0') + ' \u00b7 ' + String(e.clientY).padStart(3, '0');
+        });
+
+        // Fade out when cursor leaves window
+        document.addEventListener('mouseleave', function() { xh.style.opacity = '0'; });
+        document.addEventListener('mouseenter', function() { xh.style.opacity = '1'; });
+    })();
+</script>
 </body>
 </html>

@@ -231,9 +231,13 @@
             <svg viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
             Business Operations
         </a>
-        <a href="#finance">
+        <a href="#corporate-finance">
             <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></svg>
-            Finance
+            Corporate Finance
+        </a>
+        <a href="#personal-finance">
+            <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            Personal Finance
         </a>
         <a href="#data-documents">
             <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
@@ -363,14 +367,14 @@
         </div>
     </div>
 
-    <!-- ═══ Finance ═══ -->
-    <div class="calc-category open" id="finance" onclick="toggleCategory(this)">
+    <!-- ═══ Corporate Finance ═══ -->
+    <div class="calc-category open" id="corporate-finance" onclick="toggleCategory(this)">
         <div class="category-header">
             <div class="category-icon">
                 <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 8h2m2 0h2m2 0h2"/><path d="M7 12h10"/></svg>
             </div>
-            <span class="category-title">Finance</span>
-            <span class="category-count">4 tools</span>
+            <span class="category-title">Corporate Finance</span>
+            <span class="category-count">2 tools</span>
             <svg class="category-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
         </div>
         <div class="category-body" onclick="event.stopPropagation()">
@@ -402,6 +406,37 @@
                 <div class="tags">
                     <span class="tag">Pricing</span>
                     <span class="tag">Proposals</span>
+                </div>
+            </article>
+
+        </div>
+    </div>
+
+    <!-- ═══ Personal Finance ═══ -->
+    <div class="calc-category open" id="personal-finance" onclick="toggleCategory(this)">
+        <div class="category-header">
+            <div class="category-icon">
+                <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            </div>
+            <span class="category-title">Personal Finance</span>
+            <span class="category-count">3 tools</span>
+            <svg class="category-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="category-body" onclick="event.stopPropagation()">
+
+            <article class="calc-card" id="mortgage-calc">
+                <div>
+                    <div class="calc-icon">
+                        <svg width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/><path d="M12 2v5"/></svg>
+                    </div>
+                    <h3>Mortgage Refinance &amp; Early Payoff</h3>
+                    <p>Compare your current mortgage against a refinance or early payoff strategies. See interest savings, break-even, and amortization schedules with charts.</p>
+                </div>
+                <a href="../calculators/mortgage-calc/" class="card-link">Open Calculator &rarr;</a>
+                <div class="tags">
+                    <span class="tag">Mortgage</span>
+                    <span class="tag">Refinance</span>
+                    <span class="tag">Payoff</span>
                 </div>
             </article>
 
