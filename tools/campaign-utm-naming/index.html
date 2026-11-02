@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campaign Naming & UTM Builder | Marketing Operations</title>
+    <link rel="stylesheet" href="../../styles.css">
+    <link rel="stylesheet" href="../../calculators/calculators.css">
+    <style>
+        /* ── Builder specific layout ── */
+        .builder-layout {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr;
+            gap: 2rem;
+            margin-bottom: 3rem;
+            align-items: start;
+        }
+
+        /* ── Cards ── */
+        .ops-card {
+            background: rgba(0,0,0,0.015); 
+            border: 1.5px solid rgba(0,0,0,0.08);
+            border-radius: 10px; 
+            padding: 1.5rem; 
+            transition: border-color 0.15s;
+        }
+        .ops-card:hover { border-color: rgba(0,0,0,0.15); }
+        .ops-card-title {
+            font-family: 'Inter', system-ui, sans-serif;
+            font-weight: 700; 
+            font-size: 1.1rem;
+            margin-top: 0;
+            margin-bottom: 1.25rem;
+            border-bottom: 2px solid rgba(0,0,0,0.06);
+            padding-bottom: 0.75rem;
+        }
+
+        /* ── Form Grid ── */
+        .ops-grid {
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+        .ops-grid.full { grid-template-columns: 1fr; }
+        
+        .form-group { margin-bottom: 0.5rem; }
+        .form-group label { 
+            display: block;
+            font-size: 0.78rem; 
+            font-weight: 600; 
+            color: var(--text-secondary);
+            margin-bottom: 0.3rem;
+            text-transform: uppercase; 
+            letter-spacing: 0.03em;
+        }
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 0.6rem 0.75rem; 
+            font-size: 0.9rem; 
+            font-family: 'Inter', system-ui, sans-serif;
+            border: 1.5px solid rgba(0,0,0,0.12); 
+            border-radius: 6px;
+            background: var(--card-bg); 
+            color: var(--text-primary);
+            transition: all 0.2s;
+        }
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none; 
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px rgba(37,99,235,0.12);
+        }
+
+        /* ── Output Box ── */
+        .output-box {
+            background: var(--card-bg);
+            border: 1.5px solid rgba(0,0,0,0.1);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1.25rem;
+            position: relative;
+        }
+        .output-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .output-value {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 0.85rem;
+            word-break: break-all;
+            color: var(--text-primary);
+            line-height: 1.4;
+        }
+        .badge {
+            font-family: 'Inter', system-ui, sans-serif;
+            font-size: 0.65rem; 
+            font-weight: 700; 
+            padding: 0.2rem 0.55rem;
+            border-radius: 50px; 
+            text-transform: uppercase; 
+            letter-spacing: 0.03em;
+            background: rgba(37,99,235,0.1); 
+            color: var(--accent);
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .badge.show { opacity: 1; }
+        .badge-success { background: rgba(22,163,74,0.1); color: #16a34a; }
+
+        /* ── Action buttons ── */
+        .btn-group { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 1rem; }
+        .action-btn {
+            display: inline-flex; align-items: center; gap: 0.4rem;
+            padding: 0.5rem 1rem; font-family: 'Inter', system-ui, sans-serif;
+            font-size: 0.85rem; font-weight: 600; border-radius: 6px;
+            cursor: pointer; transition: all 0.2s; min-height: 38px;
+        }
+        .action-btn svg {
+            width: 16px; height: 16px; stroke: currentColor; fill: none;
+            stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+        }
+        .action-btn.primary { background: var(--accent); color: #fff; border: none; }
+        .action-btn.primary:hover { background: var(--accent-hover); transform: translateY(-1px); }
+        .action-btn.secondary { background: transparent; color: var(--accent); border: 1.5px solid rgba(0,0,0,0.12); }
+        .action-btn.secondary:hover { border-color: var(--accent); background: rgba(37,99,235,0.04); }
+        .action-btn.danger { background: transparent; color: #dc2626; border: 1.5px solid rgba(220,38,38,0.2); }
+        .action-btn.danger:hover { background: rgba(220,38,38,0.05); }
+
+        /* ── History Table (inherited styles adapted) ── */
+        .comp-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        .comp-table th {
+            font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.04em; color: var(--text-secondary);
+            padding: 0.75rem; text-align: left;
+            border-bottom: 2px solid rgba(0,0,0,0.08);
+            background: var(--bg-color);
+        }
+        .comp-table td {
+            padding: 0.75rem; text-align: left;
+            border-bottom: 1px solid rgba(0,0,0,0.04);
+            vertical-align: middle;
+        }
+        .comp-table tr:hover td { background: rgba(37,99,235,0.02); }
+        .mono-cell { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.8rem; color: var(--text-secondary); }
+
+        /* ── Responsive ── */
+        @media (max-width: 800px) {
+            .builder-layout { grid-template-columns: 1fr; }
+            .ops-card { padding: 1.25rem; }
+        }
+        
+        /* ── Dark mode support ── */
+        @media (prefers-color-scheme: dark) {
+            .ops-card { border-color: rgba(255,255,255,0.1); background: rgba(255,255,255,0.02); }
+            .ops-card:hover { border-color: rgba(255,255,255,0.2); }
+            .ops-card-title { border-bottom-color: rgba(255,255,255,0.08); }
+            .form-group input, .form-group select { border-color: rgba(255,255,255,0.12); background: rgba(0,0,0,0.2); }
+            .output-box { border-color: rgba(255,255,255,0.1); background: rgba(0,0,0,0.2); }
+            .action-btn.secondary { border-color: rgba(255,255,255,0.15); }
+            .comp-table th { border-bottom-color: rgba(255,255,255,0.12); background: transparent; }
+            .comp-table td { border-bottom-color: rgba(255,255,255,0.05); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <a href="/tools/" class="back-link">&larr; All Tools &amp; Calculators</a>
+
+    <section class="page-intro">
+        <div class="subtitle">Marketing Operations</div>
+        <h1>Campaign Naming & UTM Builder</h1>
+        <p>Generate standardized, analytics-friendly campaign naming conventions and trackable UTM parameters for your marketing channels.</p>
+    </section>
+
+    <!-- Builder Section -->
+    <div class="builder-layout">
+        
+        <!-- Left: Input Form -->
+        <div class="ops-card">
+            <h2 class="ops-card-title">1. Define Campaign Attributes</h2>
+            
+            <div class="ops-grid full" style="margin-bottom: 1rem;">
+                <div class="form-group">
+                    <label>Destination / Landing Page URL</label>
+                    <input type="url" id="baseUrl" placeholder="https://www.yourwebsite.com/landing-page" autocomplete="off">
+                </div>
+            </div>
+
+            <div class="ops-grid">
+                <div class="form-group">
+                    <label>Year & Quarter</label>
+                    <select id="timeframe">
+                        <option value="">-- Select --</option>
+                        <option value="2025-q1">2025-Q1</option>
+                        <option value="2025-q2">2025-Q2</option>
+                        <option value="2025-q3">2025-Q3</option>
+                        <option value="2025-q4">2025-Q4</option>
+                        <option value="2026-q1">2026-Q1</option>
+                        <option value="2026-q2">2026-Q2</option>
+                        <option value="2026-q3">2026-Q3</option>
+                        <option value="2026-q4">2026-Q4</option>
+                        <option value="evergreen">Evergreen (Always On)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Region / Geo</label>
+                    <select id="region">
+                        <option value="">-- Select --</option>
+                        <option value="global">GLOBAL</option>
+                        <option value="na">NA (North America)</option>
+                        <option value="emea">EMEA (Europe, Middle East, Africa)</option>
+                        <option value="apac">APAC (Asia-Pacific)</option>
+                        <option value="latam">LATAM (Latin America)</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Medium (utm_medium)</label>
+                    <select id="medium">
+                        <option value="">-- Select --</option>
+                        <option value="paid-social">Paid Social</option>
+                        <option value="organic-social">Organic Social</option>
+                        <option value="email">Email</option>
+                        <option value="cpc">CPC / Search</option>
+                        <option value="display">Display</option>
+                        <option value="referral">Referral / Partner</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Source (utm_source)</label>
+                    <input type="text" id="source" list="sourcesList" placeholder="e.g., linkedin, google, newsletter">
+                    <datalist id="sourcesList">
+                        <option value="linkedin">
+                        <option value="google">
+                        <option value="facebook">
+                        <option value="twitter">
+                        <option value="marketo">
+                        <option value="hubspot">
+                    </datalist>
+                </div>
+
+                <div class="form-group">
+                    <label>Asset / Content Type</label>
+                    <select id="asset">
+                        <option value="">-- Select --</option>
+                        <option value="webinar">Webinar</option>
+                        <option value="ebook">eBook / Guide</option>
+                        <option value="whitepaper">Whitepaper</option>
+                        <option value="demo">Demo Request</option>
+                        <option value="event">Live Event / Field</option>
+                        <option value="blog">Blog Post</option>
+                        <option value="newsletter">Newsletter</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Campaign Theme / Name</label>
+                    <input type="text" id="theme" placeholder="e.g., Future of Ops 2026">
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: Live Output -->
+        <div class="ops-card">
+            <h2 class="ops-card-title">2. Standardized Output</h2>
+            
+            <div class="output-box">
+                <div class="output-label">
+                    Campaign ID (utm_campaign)
+                    <span class="badge badge-success" id="badgeId">Copied!</span>
+                </div>
+                <div class="output-value" id="outCampaignId">Fill out the fields to generate ID...</div>
+            </div>
+
+            <div class="output-box">
+                <div class="output-label">
+                    Fully Tagged URL
+                    <span class="badge badge-success" id="badgeUrl">Copied!</span>
+                </div>
+                <div class="output-value" id="outFullUrl" style="min-height: 3rem;">Waiting for base URL...</div>
+            </div>
+
+            <div class="btn-group">
+                <button class="action-btn secondary" onclick="copyToClipboard('outCampaignId', 'badgeId')">
+                    <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                    Copy ID
+                </button>
+                <button class="action-btn secondary" onclick="copyToClipboard('outFullUrl', 'badgeUrl')">
+                    <svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                    Copy URL
+                </button>
+                <button class="action-btn primary" onclick="saveToHistory()" style="margin-left: auto;">
+                    <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                    Save to Log
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- History Section -->
+    <div class="ops-card" style="padding: 1.5rem 0;">
+        <div style="padding: 0 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+            <h2 class="ops-card-title" style="border:none; padding:0; margin:0;">3. Naming History Log</h2>
+            <button class="action-btn danger" onclick="clearHistory()" style="min-height:30px; padding: 0.25rem 0.75rem; font-size: 0.75rem;">Clear All</button>
+        </div>
+        
+        <div style="overflow-x: auto; margin-top: 1rem;">
+            <table class="comp-table">
+                <thead>
+                    <tr>
+                        <th>Date Saved</th>
+                        <th>Campaign ID</th>
+                        <th>Preview URL</th>
+                        <th style="text-align:right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="historyTableBody">
+                    <tr>
+                        <td colspan="4" style="text-align:center; color:var(--text-secondary); padding: 2rem;">No history saved yet. Generate a link and click "Save to Log".</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Utility to slugify/clean text for standard nomenclature
+    function cleanString(str) {
+        if (!str) return '';
+        return str.trim().toLowerCase()
+            .replace(/\s+/g, '-')          // Replace spaces with hyphens
+            .replace(/[^a-z0-9\-]/g, '')   // Remove all non-alphanumeric characters except hyphens
+            .replace(/-+/g, '-');          // Remove consecutive hyphens
+    }
+
+    // Main generation function
+    function updateGenerator() {
+        const baseUrl = document.getElementById('baseUrl').value.trim();
+        const timeframe = document.getElementById('timeframe').value;
+        const region = document.getElementById('region').value;
+        const medium = document.getElementById('medium').value;
+        const source = cleanString(document.getElementById('source').value);
+        const asset = document.getElementById('asset').value;
+        const theme = cleanString(document.getElementById('theme').value);
+
+        // 1. Build Campaign ID string
+        // Taxonomy Standard: timeframe_region_medium_source_asset_theme
+        const elements = [timeframe, region, medium, source, asset, theme].filter(el => el && el.length > 0);
+        let campaignId = elements.join('_');
+        
+        const outId = document.getElementById('outCampaignId');
+        if (campaignId) {
+            outId.textContent = campaignId;
+            outId.style.color = 'var(--text-primary)';
+        } else {
+            outId.textContent = 'Fill out the fields to generate ID...';
+            outId.style.color = 'var(--text-secondary)';
+        }
+
+        // 2. Build Tagged URL
+        const outUrl = document.getElementById('outFullUrl');
+        if (!baseUrl) {
+            outUrl.textContent = 'Waiting for destination URL...';
+            outUrl.style.color = 'var(--text-secondary)';
+            return;
+        }
+
+        try {
+            // Validate URL
+            const url = new URL(baseUrl.startsWith('http') ? baseUrl : 'https://' + baseUrl);
+            
+            // Append UTMs
+            if (source) url.searchParams.set('utm_source', source);
+            if (medium) url.searchParams.set('utm_medium', medium);
+            if (campaignId) url.searchParams.set('utm_campaign', campaignId);
+            if (asset) url.searchParams.set('utm_content', asset); // Mapping asset type to utm_content
+
+            outUrl.textContent = url.toString();
+            outUrl.style.color = 'var(--text-primary)';
+        } catch (e) {
+            outUrl.textContent = 'Please enter a valid URL (e.g., https://website.com)';
+            outUrl.style.color = '#dc2626';
+        }
+    }
+
+    // Attach event listeners to all inputs
+    const inputs = ['baseUrl', 'timeframe', 'region', 'medium', 'source', 'asset', 'theme'];
+    inputs.forEach(id => {
+        document.getElementById(id).addEventListener('input', updateGenerator);
+        document.getElementById(id).addEventListener('change', updateGenerator);
+    });
+
+    // Copy to clipboard functionality
+    function copyToClipboard(elementId, badgeId) {
+        const text = document.getElementById(elementId).textContent;
+        if (text.includes('...')) return; // Don't copy placeholder text
+
+        navigator.clipboard.writeText(text).then(() => {
+            const badge = document.getElementById(badgeId);
+            badge.classList.add('show');
+            setTimeout(() => { badge.classList.remove('show'); }, 2000);
+        });
+    }
+
+    // History Log functionality
+    const HISTORY_KEY = 'utm_builder_history';
+
+    function saveToHistory() {
+        const campaignId = document.getElementById('outCampaignId').textContent;
+        const fullUrl = document.getElementById('outFullUrl').textContent;
+        
+        if (!campaignId || campaignId.includes('...')) {
+            alert('Please generate a Campaign ID first.');
+            return;
+        }
+
+        const record = {
+            id: Date.now(),
+            date: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+            campaignId: campaignId,
+            url: fullUrl.includes('...') ? '' : fullUrl
+        };
+
+        let history = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+        history.unshift(record); // Add to beginning
+        if (history.length > 50) history.pop(); // Keep max 50 items
+
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+        renderHistory();
+        
+        // Visual feedback on save button
+        const btn = event.currentTarget;
+        const originalText = btn.innerHTML;
+        btn.innerHTML = 'Saved!';
+        btn.style.background = '#16a34a';
+        setTimeout(() => {
+            btn.innerHTML = originalText;
+            btn.style.background = '';
+        }, 1500);
+    }
+
+    function clearHistory() {
+        if(confirm('Are you sure you want to clear your naming history?')) {
+            localStorage.removeItem(HISTORY_KEY);
+            renderHistory();
+        }
+    }
+
+    function renderHistory() {
+        const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+        const tbody = document.getElementById('historyTableBody');
+        
+        if (history.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--text-secondary); padding: 2rem;">No history saved yet. Generate a link and click "Save to Log".</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = history.map(item => `
+            <tr>
+                <td style="color:var(--text-secondary); font-size:0.75rem;">${item.date}</td>
+                <td style="font-weight:600;">${item.campaignId}</td>
+                <td class="mono-cell">${item.url ? item.url.substring(0, 45) + (item.url.length > 45 ? '...' : '') : '<span style="color:#dc2626">No URL</span>'}</td>
+                <td style="text-align:right;">
+                    <button class="action-btn secondary" style="padding: 0.3rem 0.6rem; min-height:0; font-size: 0.75rem;" onclick="navigator.clipboard.writeText('${item.url}')" ${!item.url ? 'disabled' : ''}>
+                        Copy URL
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    // Initialize on page load
+    window.addEventListener('DOMContentLoaded', () => {
+        updateGenerator();
+        renderHistory();
+    });
+</script>
+
+</body>
+</html>
