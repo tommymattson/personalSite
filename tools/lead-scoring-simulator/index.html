@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lead Scoring Rubric & Simulator | Marketing Operations</title>
+    <link rel="stylesheet" href="../../styles.css">
+    <link rel="stylesheet" href="../../calculators/calculators.css">
+    <style>
+        /* ── Layout ── */
+        .builder-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 3rem;
+            align-items: start;
+        }
+
+        /* ── Cards ── */
+        .ops-card {
+            background: var(--card-bg); 
+            border: 1px solid rgba(0,0,0,0.08);
+            border-radius: 12px; 
+            padding: 1.5rem; 
+            box-shadow: var(--shadow);
+        }
+        .ops-card-title {
+            font-family: 'Inter', system-ui, sans-serif;
+            font-weight: 700; 
+            font-size: 1.1rem;
+            margin-top: 0;
+            margin-bottom: 1.25rem;
+            border-bottom: 2px solid rgba(0,0,0,0.06);
+            padding-bottom: 0.75rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* ── Form Grid ── */
+        .ops-grid {
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+        .ops-grid.full { grid-template-columns: 1fr; }
+        
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { 
+            display: block;
+            font-size: 0.78rem; 
+            font-weight: 600; 
+            color: var(--text-secondary);
+            margin-bottom: 0.4rem;
+            text-transform: uppercase; 
+            letter-spacing: 0.03em;
+        }
+        .form-group select {
+            width: 100%;
+            padding: 0.6rem 0.75rem; 
+            font-size: 0.9rem; 
+            font-family: 'Inter', system-ui, sans-serif;
+            border: 1.5px solid rgba(0,0,0,0.12); 
+            border-radius: 6px;
+            background: var(--bg-color); 
+            color: var(--text-primary);
+            transition: all 0.2s;
+        }
+        .form-group select:focus {
+            outline: none; border-color: var(--accent);
+            box-shadow: 0 0 0 2px rgba(37,99,235,0.12);
+        }
+
+        /* ── Checkboxes ── */
+        .behavior-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        .chk-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            cursor: pointer;
+        }
+        .chk-row input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--accent);
+            cursor: pointer;
+        }
+        .pts-badge {
+            margin-left: auto;
+            font-size: 0.75rem;
+            font-weight: 700;
+            background: rgba(0,0,0,0.05);
+            padding: 2px 8px;
+            border-radius: 50px;
+            color: var(--text-secondary);
+        }
+        .pts-badge.pos { color: #16a34a; background: rgba(22,163,74,0.1); }
+        .pts-badge.neg { color: #dc2626; background: rgba(220,38,38,0.1); }
+
+        /* ── Output / Score Display ── */
+        .score-display {
+            text-align: center;
+            padding: 2rem 1rem;
+            border-radius: 10px;
+            background: rgba(0,0,0,0.02);
+            border: 1.5px solid rgba(0,0,0,0.05);
+            margin-bottom: 1.5rem;
+            transition: all 0.3s ease;
+        }
+        .score-display.mql {
+            background: rgba(22,163,74,0.05);
+            border-color: rgba(22,163,74,0.3);
+        }
+        .score-display.disqualified {
+            background: rgba(220,38,38,0.05);
+            border-color: rgba(220,38,38,0.3);
+        }
+        
+        .score-number {
+            font-family: var(--display, 'Shippori Mincho', Georgia, serif);
+            font-size: 4.5rem;
+            font-weight: 700;
+            line-height: 1;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+            transition: color 0.3s ease;
+        }
+        .score-display.mql .score-number { color: #16a34a; }
+        .score-display.disqualified .score-number { color: #dc2626; }
+
+        .score-status {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .score-display.mql .score-status { color: #16a34a; }
+
+        /* ── Progress Bar ── */
+        .progress-container {
+            width: 100%;
+            background: rgba(0,0,0,0.08);
+            border-radius: 50px;
+            height: 10px;
+            overflow: hidden;
+            margin-bottom: 0.75rem;
+        }
+        .progress-bar {
+            height: 100%;
+            background: var(--text-secondary);
+            width: 0%;
+            transition: width 0.4s ease, background-color 0.4s ease;
+        }
+        .progress-bar.mql { background: #16a34a; }
+        
+        .threshold-markers {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        /* ── Rubric Table ── */
+        .rubric-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+        .rubric-table th {
+            text-align: left;
+            padding: 0.5rem;
+            border-bottom: 2px solid rgba(0,0,0,0.08);
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.03em;
+        }
+        .rubric-table td {
+            padding: 0.5rem;
+            border-bottom: 1px solid rgba(0,0,0,0.04);
+            color: var(--text-primary);
+        }
+        .rubric-table tr:last-child td { border-bottom: none; }
+        .val-col { text-align: right; font-weight: 600; }
+
+        /* ── Routing Card ── */
+        .route-card {
+            padding: 1rem;
+            border-radius: 8px;
+            background: var(--bg-color);
+            border-left: 4px solid var(--text-secondary);
+            margin-top: 1.5rem;
+        }
+        .route-card h4 { margin: 0 0 0.25rem 0; font-size: 0.9rem; }
+        .route-card p { margin: 0; font-size: 0.85rem; color: var(--text-secondary); }
+
+        /* ── Responsive ── */
+        @media (max-width: 768px) {
+            .builder-layout { grid-template-columns: 1fr; }
+        }
+
+        /* ── Dark Mode ── */
+        @media (prefers-color-scheme: dark) {
+            .ops-card { background: var(--card-bg); border-color: rgba(255,255,255,0.1); }
+            .ops-card-title { border-bottom-color: rgba(255,255,255,0.08); }
+            .score-display { background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.08); }
+            .rubric-table th { border-bottom-color: rgba(255,255,255,0.15); }
+            .rubric-table td { border-bottom-color: rgba(255,255,255,0.05); }
+            .pts-badge { background: rgba(255,255,255,0.1); }
+            .form-group select { border-color: rgba(255,255,255,0.15); background: rgba(0,0,0,0.2); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <a href="/tools/" class="back-link">&larr; All Tools &amp; Calculators</a>
+
+    <section class="page-intro">
+        <div class="subtitle">Marketing Operations</div>
+        <h1>Lead Scoring Rubric & Simulator</h1>
+        <p>Test your demographic and behavioral scoring logic to align Marketing and Sales on what qualifies as a Marketing Qualified Lead (MQL).</p>
+    </section>
+
+    <div class="builder-layout">
+        
+        <!-- Left Column: Sandbox Simulator -->
+        <div class="ops-card">
+            <h2 class="ops-card-title">Contact Simulator</h2>
+            
+            <div class="form-group" style="margin-top: 0.5rem;">
+                <h3 style="font-size: 0.9rem; margin: 0 0 1rem 0; color: var(--text-primary);">Explicit Firmographics (Fit)</h3>
+                
+                <div class="ops-grid">
+                    <div class="form-group">
+                        <label>Job Level</label>
+                        <select class="score-input" id="demoLevel">
+                            <option value="0">-- Select --</option>
+                            <option value="40">C-Level / Founder</option>
+                            <option value="30">VP / Head of</option>
+                            <option value="20">Director</option>
+                            <option value="10">Manager</option>
+                            <option value="0">Individual Contributor</option>
+                            <option value="-50">Student / Intern</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Company Size</label>
+                        <select class="score-input" id="demoSize">
+                            <option value="0">-- Select --</option>
+                            <option value="30">Enterprise (1000+)</option>
+                            <option value="20">Mid-Market (100-999)</option>
+                            <option value="10">SMB (10-99)</option>
+                            <option value="0">Micro (1-9)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Department</label>
+                        <select class="score-input" id="demoDept">
+                            <option value="0">-- Select --</option>
+                            <option value="20">IT / Engineering</option>
+                            <option value="10">Marketing / Sales</option>
+                            <option value="0">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Email Domain</label>
+                        <select class="score-input" id="demoDomain">
+                            <option value="0">Corporate Domain (@company.com)</option>
+                            <option value="-25">Freemail (@gmail.com, @yahoo.com)</option>
+                            <option value="-100">Temporary / Spam Domain</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid rgba(0,0,0,0.08); margin: 2rem 0;">
+
+            <div class="form-group">
+                <h3 style="font-size: 0.9rem; margin: 0 0 1rem 0; color: var(--text-primary);">Implicit Behaviors (Intent)</h3>
+                
+                <div class="behavior-list">
+                    <label class="chk-row">
+                        <input type="checkbox" class="score-chk" value="50">
+                        Requested a Demo (Contact Sales)
+                        <span class="pts-badge pos">+50</span>
+                    </label>
+                    <label class="chk-row">
+                        <input type="checkbox" class="score-chk" value="20">
+                        Attended a Live Webinar
+                        <span class="pts-badge pos">+20</span>
+                    </label>
+                    <label class="chk-row">
+                        <input type="checkbox" class="score-chk" value="15">
+                        Visited Pricing Page
+                        <span class="pts-badge pos">+15</span>
+                    </label>
+                    <label class="chk-row">
+                        <input type="checkbox" class="score-chk" value="10">
+                        Downloaded Gated eBook/Asset
+                        <span class="pts-badge pos">+10</span>
+                    </label>
+                    <label class="chk-row">
+                        <input type="checkbox" class="score-chk" value="5">
+                        Clicked Email Link
+                        <span class="pts-badge pos">+5</span>
+                    </label>
+                    <label class="chk-row">
+                        <input type="checkbox" class="score-chk" value="-100">
+                        Unsubscribed from Communications
+                        <span class="pts-badge neg">-100</span>
+                    </label>
+                </div>
+            </div>
+            
+            <button class="btn" style="width: 100%; margin-top: 1rem; background: transparent; color: var(--text-primary); border: 1px solid rgba(0,0,0,0.1);" onclick="resetSimulator()">Reset Simulator</button>
+        </div>
+
+        <!-- Right Column: Results & Matrix -->
+        <div>
+            <!-- Live Result Card -->
+            <div class="ops-card" style="margin-bottom: 2rem;">
+                <h2 class="ops-card-title">Live Score Output</h2>
+                
+                <div class="score-display" id="scoreDisplay">
+                    <div class="score-number" id="totalScore">0</div>
+                    <div class="score-status" id="scoreStatus">Lead (Nurture)</div>
+                </div>
+
+                <div class="progress-container">
+                    <div class="progress-bar" id="scoreBar"></div>
+                </div>
+                <div class="threshold-markers">
+                    <span>0</span>
+                    <span>MQL Threshold: 100</span>
+                </div>
+
+                <div class="route-card" id="routeCard">
+                    <h4 id="routeTitle">Route to Marketing Nurture</h4>
+                    <p id="routeDesc">Score is below 100. Keep in automated lifecycle campaigns until fit/intent increases.</p>
+                </div>
+            </div>
+
+            <!-- Rubric Reference -->
+            <div class="ops-card">
+                <h2 class="ops-card-title">Scoring Matrix Reference</h2>
+                
+                <table class="rubric-table" style="margin-bottom: 1.5rem;">
+                    <thead>
+                        <tr>
+                            <th>Firmographic Data (Fit)</th>
+                            <th class="val-col">Points</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>C-Level / VP</td><td class="val-col" style="color:#16a34a;">+30 to +40</td></tr>
+                        <tr><td>Enterprise (1000+ emp)</td><td class="val-col" style="color:#16a34a;">+30</td></tr>
+                        <tr><td>IT / Engineering Dept</td><td class="val-col" style="color:#16a34a;">+20</td></tr>
+                        <tr><td>Freemail Domain</td><td class="val-col" style="color:#dc2626;">-25</td></tr>
+                        <tr><td>Student / Intern Title</td><td class="val-col" style="color:#dc2626;">-50</td></tr>
+                    </tbody>
+                </table>
+
+                <table class="rubric-table">
+                    <thead>
+                        <tr>
+                            <th>Behavioral Data (Intent)</th>
+                            <th class="val-col">Points</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Demo Request</td><td class="val-col" style="color:#16a34a;">+50</td></tr>
+                        <tr><td>Webinar Attendance</td><td class="val-col" style="color:#16a34a;">+20</td></tr>
+                        <tr><td>Pricing Page View</td><td class="val-col" style="color:#16a34a;">+15</td></tr>
+                        <tr><td>Content Download</td><td class="val-col" style="color:#16a34a;">+10</td></tr>
+                        <tr><td>Global Unsubscribe</td><td class="val-col" style="color:#dc2626;">-100</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    const MQL_THRESHOLD = 100;
+    
+    function calculateScore() {
+        let total = 0;
+        
+        // Sum select dropdowns (Demographics)
+        const selects = document.querySelectorAll('.score-input');
+        selects.forEach(select => {
+            total += parseInt(select.value) || 0;
+        });
+
+        // Sum checkboxes (Behaviors)
+        const checks = document.querySelectorAll('.score-chk:checked');
+        checks.forEach(chk => {
+            total += parseInt(chk.value) || 0;
+        });
+
+        updateUI(total);
+    }
+
+    function updateUI(score) {
+        // Update number
+        document.getElementById('totalScore').textContent = score;
+
+        // Update progress bar
+        const bar = document.getElementById('scoreBar');
+        const display = document.getElementById('scoreDisplay');
+        const routeCard = document.getElementById('routeCard');
+        const routeTitle = document.getElementById('routeTitle');
+        const routeDesc = document.getElementById('routeDesc');
+        const status = document.getElementById('scoreStatus');
+
+        // Calculate fill percentage (capped at 100% for the bar)
+        let pct = (score / MQL_THRESHOLD) * 100;
+        if (pct < 0) pct = 0;
+        if (pct > 100) pct = 100;
+        bar.style.width = pct + '%';
+
+        // Reset classes
+        display.className = 'score-display';
+        bar.className = 'progress-bar';
+        routeCard.style.borderLeftColor = 'var(--text-secondary)';
+
+        // Routing Logic
+        if (score < 0) {
+            display.classList.add('disqualified');
+            status.textContent = 'Disqualified';
+            routeTitle.textContent = 'Route to Trash / Suppression';
+            routeDesc.textContent = 'Negative score indicates poor fit or explicit opt-out. Do not sync to CRM.';
+            routeCard.style.borderLeftColor = '#dc2626';
+        } else if (score >= MQL_THRESHOLD) {
+            display.classList.add('mql');
+            bar.classList.add('mql');
+            status.textContent = 'MQL (Marketing Qualified)';
+            routeTitle.textContent = 'Sync to CRM & Assign to SDR';
+            routeDesc.textContent = 'Lead has crossed the 100pt threshold. Trigger immediate CRM sync and create Sales Task.';
+            routeCard.style.borderLeftColor = '#16a34a';
+        } else {
+            status.textContent = 'Lead (Nurture)';
+            routeTitle.textContent = 'Route to Marketing Nurture';
+            routeDesc.textContent = 'Score is below 100. Keep in automated lifecycle campaigns until fit/intent increases.';
+        }
+    }
+
+    function resetSimulator() {
+        document.querySelectorAll('.score-input').forEach(el => el.value = "0");
+        document.querySelectorAll('.score-chk').forEach(el => el.checked = false);
+        calculateScore();
+    }
+
+    // Attach listeners
+    document.querySelectorAll('.score-input, .score-chk').forEach(el => {
+        el.addEventListener('change', calculateScore);
+    });
+
+    // Initial calculation
+    calculateScore();
+</script>
+
+</body>
+</html>
